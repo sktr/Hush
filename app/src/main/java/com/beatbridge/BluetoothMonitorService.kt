@@ -122,7 +122,7 @@ class BluetoothMonitorService : Service() {
         if (appPackages.isNotEmpty()) {
             launchAppsSequentially(appPackages, delayMs)
         } else {
-            triggerMediaPlay()
+            suppressAutoplay()
         }
     }
 
@@ -203,7 +203,7 @@ class BluetoothMonitorService : Service() {
     private fun launchAppsSequentially(packages: List<String>, delayMs: Long) {
         fun step(index: Int) {
             if (index >= packages.size) {
-                triggerMediaPlay()
+                suppressAutoplay()
                 return
             }
             launchApp(packages[index])
@@ -252,11 +252,28 @@ class BluetoothMonitorService : Service() {
         }
     }
 
-    private fun triggerMediaPlay() {
-        val audioManager = getSystemService(AudioManager::class.java)
-        audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY))
-        audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY))
-        Log.i(TAG, "MEDIA_PLAY dispatched")
+    private fun suppressAutoplay() {
+        val audioManager = getSystemService(AudioManager::class.java) ?: return
+        val previousVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, PlaybackBlocker.MUTE_VOLUME, 0)
+
+        fun dispatchPause() {
+            for ((action, keyCode) in PlaybackBlocker.pauseKeyEvents()) {
+                audioManager.dispatchMediaKeyEvent(KeyEvent(action, keyCode))
+            }
+            Log.i(TAG, "MEDIA_PAUSE dispatched")
+        }
+
+        dispatchPause()
+        handler.postDelayed({
+            dispatchPause()
+            handler.postDelayed({
+                if (PlaybackBlocker.shouldRestoreVolume(audioManager.isMusicActive)) {
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, previousVolume, 0)
+                    Log.i(TAG, "Volume restored to $previousVolume")
+                }
+            }, PlaybackBlocker.RESTORE_DELAY_MS)
+        }, PlaybackBlocker.PAUSE_RETRY_DELAY_MS)
     }
 
     private fun createNotificationChannel() {
