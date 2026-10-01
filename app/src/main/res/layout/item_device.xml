@@ -44,15 +44,4 @@
         android:visibility="invisible"
         android:contentDescription="@string/selected" />
 
-    <ImageView
-        android:id="@+id/iv_tune"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:layout_marginStart="8dp"
-        android:padding="8dp"
-        android:src="@drawable/ic_tune"
-        app:tint="@color/bb_on_surface_dim"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="@string/device_app_overrides" />
-
 </LinearLayout>

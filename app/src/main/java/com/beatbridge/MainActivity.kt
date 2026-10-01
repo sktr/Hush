@@ -9,11 +9,9 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
-import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,10 +32,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var prefs: SharedPreferences
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private val deviceList = mutableListOf<BtDevice>()
-    private val musicAppList = mutableListOf<MusicApp>()
     private lateinit var deviceAdapter: DeviceAdapter
-    private lateinit var appAdapter: AppAdapter
-    private var pendingOverlayApp: MusicApp? = null
     private var pendingCompanionAddress: String? = null
 
     private val permissionLauncher = registerForActivityResult(
@@ -51,22 +46,6 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(
                 this,
                 getString(R.string.bluetooth_permission_required),
-                Toast.LENGTH_LONG
-            ).show()
-        }
-    }
-
-    private val overlayPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) {
-        val app = pendingOverlayApp ?: return@registerForActivityResult
-        pendingOverlayApp = null
-        if (Settings.canDrawOverlays(this)) {
-            addSelectedApp(app)
-        } else {
-            Toast.makeText(
-                this,
-                getString(R.string.overlay_permission_required),
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -106,12 +85,9 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        loadMusicApps()
         setupDeviceRecyclerView()
-        setupAppRecyclerView()
         setupSearch()
         setupAnyDeviceToggle()
-        setupDelaySlider()
         setupLanguageSwitcher()
         checkPermissionsAndLoad()
         updateStatusLabel()
@@ -128,32 +104,11 @@ class MainActivity : AppCompatActivity() {
         syncMonitorService()
     }
 
-    private fun loadMusicApps() {
-        musicAppList.clear()
-
-        val launchIntent = Intent(Intent.ACTION_MAIN, null).apply {
-            addCategory(Intent.CATEGORY_LAUNCHER)
-        }
-        val found = packageManager.queryIntentActivities(launchIntent, 0)
-            .mapNotNull { resolveInfo ->
-                val pkg = resolveInfo.activityInfo.packageName
-                val label = resolveInfo.loadLabel(packageManager).toString()
-                if (pkg == packageName) null else MusicApp(pkg, label)
-            }
-
-        musicAppList.addAll(normalizeMusicApps(found))
-
-        val isEmpty = musicAppList.isEmpty()
-        binding.tvAppsEmpty.visibility = if (isEmpty) View.VISIBLE else View.GONE
-        binding.rvApps.visibility = if (isEmpty) View.GONE else View.VISIBLE
-    }
-
     private fun setupDeviceRecyclerView() {
         deviceAdapter = DeviceAdapter(
             devices = deviceList,
             selectedAddresses = prefs.getStringSet(PREF_SELECTED_DEVICES, emptySet()) ?: emptySet(),
             onSelect = { device -> onDeviceSelected(device) },
-            onConfigure = { device -> openDeviceAppsScreen(device) }
         )
         binding.rvDevices.apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
@@ -170,26 +125,6 @@ class MainActivity : AppCompatActivity() {
                 deviceAdapter.filter(s?.toString() ?: "")
             }
         })
-        binding.etAppSearch.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                appAdapter.filter(s?.toString() ?: "")
-            }
-        })
-    }
-
-    private fun setupAppRecyclerView() {
-        appAdapter = AppAdapter(
-            apps = musicAppList,
-            selectedPackages = prefs.getStringSet(PREF_SELECTED_APPS, emptySet()) ?: emptySet(),
-            onSelect = { app -> onAppSelected(app) }
-        )
-        binding.rvApps.apply {
-            layoutManager = LinearLayoutManager(this@MainActivity)
-            adapter = appAdapter
-            addItemDecoration(createListDivider())
-        }
     }
 
     private fun createListDivider() = SelectionAwareDividerDecoration(
@@ -207,22 +142,6 @@ class MainActivity : AppCompatActivity() {
             updateStatusLabel()
             syncMonitorService()
         }
-    }
-
-    private fun setupDelaySlider() {
-        val saved = prefs.getInt(PREF_LAUNCH_DELAY, 1)
-        binding.sliderDelay.progress = saved
-        updateDelayLabel(saved)
-        binding.sliderDelay.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                if (fromUser) {
-                    prefs.edit { putInt(PREF_LAUNCH_DELAY, progress) }
-                    updateDelayLabel(progress)
-                }
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar) {}
-        })
     }
 
     private fun setupLanguageSwitcher() {
@@ -269,10 +188,6 @@ class MainActivity : AppCompatActivity() {
         return locale.getDisplayName(locale).replaceFirstChar { character ->
             if (character.isLowerCase()) character.titlecase(locale) else character.toString()
         }
-    }
-
-    private fun updateDelayLabel(seconds: Int) {
-        binding.tvDelayLabel.text = getString(R.string.launch_delay, seconds)
     }
 
     private fun updateDeviceSectionEnabled(enabled: Boolean) {
@@ -328,39 +243,6 @@ class MainActivity : AppCompatActivity() {
                 }
             },
         )
-    }
-
-    private fun onAppSelected(app: MusicApp) {
-        val current = LinkedHashSet(prefs.getStringSet(PREF_SELECTED_APPS, emptySet()) ?: emptySet())
-        if (app.packageName in current) {
-            current.remove(app.packageName)
-            prefs.edit { putStringSet(PREF_SELECTED_APPS, current) }
-            appAdapter.updateSelections(current)
-            Toast.makeText(this, getString(R.string.removed_app, app.appName), Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (!Settings.canDrawOverlays(this)) {
-            pendingOverlayApp = app
-            overlayPermissionLauncher.launch(
-                Intent(
-                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    "package:${packageName}".toUri()
-                )
-            )
-            return
-        }
-        addSelectedApp(app)
-    }
-
-    private fun addSelectedApp(app: MusicApp) {
-        val current = LinkedHashSet(
-            prefs.getStringSet(PREF_SELECTED_APPS, emptySet()) ?: emptySet()
-        )
-        current.add(app.packageName)
-        prefs.edit { putStringSet(PREF_SELECTED_APPS, current) }
-        appAdapter.updateSelections(current)
-        Toast.makeText(this, getString(R.string.will_open_on_connect, app.appName), Toast.LENGTH_SHORT).show()
     }
 
     private fun checkPermissionsAndLoad() {
@@ -433,14 +315,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun openDeviceAppsScreen(device: BtDevice) {
-        val intent = Intent(this, DeviceAppsActivity::class.java).apply {
-            putExtra(DeviceAppsActivity.EXTRA_DEVICE_ADDRESS, device.address)
-            putExtra(DeviceAppsActivity.EXTRA_DEVICE_NAME, device.name.ifEmpty { device.address })
-        }
-        startActivity(intent)
-    }
-
     private fun syncMonitorService() {
         val selectedAddresses = prefs.getStringSet(PREF_SELECTED_DEVICES, emptySet()) ?: emptySet()
         val shouldMonitor = shouldMonitor(
@@ -459,12 +333,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val PREFS_NAME = "beatbridge_prefs"
         const val PREF_SELECTED_DEVICES = "selected_device_addresses"
-        const val PREF_SELECTED_APPS = "selected_app_packages"
         const val PREF_ANY_DEVICE = "any_device"
-        const val PREF_LAUNCH_DELAY = "launch_delay_seconds"
-        const val PREF_DEVICE_APPS_PREFIX = "device_apps_"
-        const val PREF_DEVICE_ASK_PREFIX = "device_ask_"
-        const val PREF_DEVICE_EQ_PREFIX = "device_eq_"
 
         internal val SUPPORTED_LANGUAGE_TAGS = listOf(
             "en",
@@ -505,10 +374,5 @@ class MainActivity : AppCompatActivity() {
             anyDevice: Boolean,
             selectedAddresses: Set<String>,
         ): Boolean = hasBluetoothPermissions && (anyDevice || selectedAddresses.isNotEmpty())
-
-        internal fun effectiveAppSelection(
-            deviceApps: Set<String>?,
-            globalApps: Set<String>,
-        ): Set<String> = deviceApps ?: globalApps
     }
 }

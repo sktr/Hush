@@ -23,27 +23,8 @@
         android:name="android.software.companion_device_setup"
         android:required="false" />
 
-    <!-- Used to launch your media player -->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-
     <!-- Needed to auto start the monitoring service on reboot -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-
-    <!-- Needed to apply per-device equalizer profiles -->
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-
-    <!-- Core app-picker functionality enumerates launchable apps so users can choose
-         arbitrary apps to open when a selected Bluetooth device connects. -->
-    <uses-permission
-        android:name="android.permission.QUERY_ALL_PACKAGES"
-        tools:ignore="PackageVisibilityPolicy,QueryAllPackagesPermission" />
-
-    <queries>
-        <intent>
-            <action android:name="android.intent.action.MAIN" />
-            <category android:name="android.intent.category.LAUNCHER" />
-        </intent>
-    </queries>
 
     <application
         android:allowBackup="true"
@@ -67,24 +48,6 @@
             android:name=".WhatsNewActivity"
             android:exported="false"
             android:parentActivityName=".MainActivity" />
-
-        <activity
-            android:name=".DeviceAppsActivity"
-            android:exported="false"
-            android:parentActivityName=".MainActivity" />
-
-        <activity
-            android:name=".DeviceEqualizerActivity"
-            android:exported="false"
-            android:parentActivityName=".DeviceAppsActivity" />
-
-        <!-- Translucent trampoline for notification action buttons -->
-        <activity
-            android:name=".NotificationActionActivity"
-            android:exported="false"
-            android:excludeFromRecents="true"
-            android:noHistory="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <!-- Persists AppCompat per-app language overrides on Android 12 and below. -->
         <service
