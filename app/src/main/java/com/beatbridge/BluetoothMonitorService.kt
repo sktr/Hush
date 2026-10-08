@@ -27,6 +27,9 @@ class BluetoothMonitorService : Service() {
 
     private val handler = Handler(Looper.getMainLooper())
     private val lastHandledConnections = mutableMapOf<String, Long>()
+    private var suppressSavedVolume: Int? = null
+    private var suppressAttempts = 0
+    private var suppressPoll: Runnable? = null
 
     private val bluetoothReceiver = object : BroadcastReceiver() {
         @SuppressLint("MissingPermission")
@@ -100,8 +103,13 @@ class BluetoothMonitorService : Service() {
 
     private fun suppressAutoplay() {
         val audioManager = getSystemService(AudioManager::class.java) ?: return
-        val previousVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        // ponytail: re-entry keeps first saved volume, mute-stuck guard + onDestroy restore
+        if (suppressSavedVolume == null) {
+            suppressSavedVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        }
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, PlaybackBlocker.MUTE_VOLUME, 0)
+        suppressPoll?.let { handler.removeCallbacks(it) }
+        suppressAttempts = 0
 
         fun dispatchPause() {
             for ((action, keyCode) in PlaybackBlocker.pauseKeyEvents()) {
@@ -111,15 +119,31 @@ class BluetoothMonitorService : Service() {
         }
 
         dispatchPause()
-        handler.postDelayed({
-            dispatchPause()
-            handler.postDelayed({
-                if (PlaybackBlocker.shouldRestoreVolume(audioManager.isMusicActive)) {
-                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, previousVolume, 0)
-                    Log.i(TAG, "Volume restored to $previousVolume")
+        val poll = object : Runnable {
+            override fun run() {
+                if (PlaybackBlocker.shouldContinuePolling(audioManager.isMusicActive, suppressAttempts)) {
+                    dispatchPause()
+                    suppressAttempts++
+                    handler.postDelayed(this, PlaybackBlocker.POLL_INTERVAL_MS)
+                } else {
+                    restoreSuppressedVolume()
                 }
-            }, PlaybackBlocker.RESTORE_DELAY_MS)
-        }, PlaybackBlocker.PAUSE_RETRY_DELAY_MS)
+            }
+        }
+        suppressPoll = poll
+        handler.postDelayed(poll, PlaybackBlocker.POLL_INTERVAL_MS)
+    }
+
+    private fun restoreSuppressedVolume() {
+        suppressPoll?.let { handler.removeCallbacks(it) }
+        suppressPoll = null
+        val saved = suppressSavedVolume
+        suppressSavedVolume = null
+        suppressAttempts = 0
+        if (saved == null) return
+        val audioManager = getSystemService(AudioManager::class.java) ?: return
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, saved, 0)
+        Log.i(TAG, "Volume restored to $saved")
     }
 
     private fun createNotificationChannel() {
@@ -188,6 +212,7 @@ class BluetoothMonitorService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        restoreSuppressedVolume()
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
         unregisterReceiver(bluetoothReceiver)

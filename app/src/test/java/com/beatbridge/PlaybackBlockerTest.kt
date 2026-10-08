@@ -26,4 +26,26 @@ class PlaybackBlockerTest {
     fun muteVolumeIsZero() {
         assertEquals(0, PlaybackBlocker.MUTE_VOLUME)
     }
+
+    @Test
+    fun keepsPollingWhilePlaying() {
+        assertTrue(PlaybackBlocker.shouldContinuePolling(isPlaying = true, attempt = 0))
+        assertTrue(
+            PlaybackBlocker.shouldContinuePolling(
+                isPlaying = true,
+                attempt = PlaybackBlocker.POLL_MAX_ATTEMPTS - 1,
+            ),
+        )
+    }
+
+    @Test
+    fun stopsPollingWhenPausedOrTimedOut() {
+        assertFalse(PlaybackBlocker.shouldContinuePolling(isPlaying = false, attempt = 0))
+        assertFalse(
+            PlaybackBlocker.shouldContinuePolling(
+                isPlaying = true,
+                attempt = PlaybackBlocker.POLL_MAX_ATTEMPTS,
+            ),
+        )
+    }
 }
