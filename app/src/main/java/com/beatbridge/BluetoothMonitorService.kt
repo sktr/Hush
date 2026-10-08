@@ -6,6 +6,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.bluetooth.BluetoothA2dp
 import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
@@ -14,6 +15,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Handler
 import android.os.IBinder
@@ -30,6 +32,8 @@ class BluetoothMonitorService : Service() {
     private var suppressSavedVolume: Int? = null
     private var suppressAttempts = 0
     private var suppressPoll: Runnable? = null
+    private var audioFocusRequest: AudioFocusRequest? = null
+    private val focusListener = AudioManager.OnAudioFocusChangeListener { }
 
     private val bluetoothReceiver = object : BroadcastReceiver() {
         @SuppressLint("MissingPermission")
@@ -52,6 +56,15 @@ class BluetoothMonitorService : Service() {
                         lastHandledConnections.remove(it.address)
                     }
                 }
+                BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED -> {
+                    val state = intent.getIntExtra(
+                        BluetoothA2dp.EXTRA_STATE, BluetoothA2dp.STATE_DISCONNECTED
+                    )
+                    if (state == BluetoothA2dp.STATE_CONNECTED) device?.let {
+                        Log.i(TAG, "A2DP connected: ${it.address}")
+                        maybeHandleDeviceConnected(it)
+                    }
+                }
             }
         }
     }
@@ -62,6 +75,7 @@ class BluetoothMonitorService : Service() {
         startForeground(NOTIFICATION_ID, buildNotification())
         val filter = IntentFilter(BluetoothDevice.ACTION_ACL_CONNECTED).apply {
             addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
+            addAction(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED)
         }
         registerReceiver(bluetoothReceiver, filter)
         Log.i(TAG, "Monitor service created")
@@ -108,21 +122,36 @@ class BluetoothMonitorService : Service() {
             suppressSavedVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
         }
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, PlaybackBlocker.MUTE_VOLUME, 0)
+        stealAudioFocus(audioManager)
         suppressPoll?.let { handler.removeCallbacks(it) }
         suppressAttempts = 0
 
-        fun dispatchPause() {
-            for ((action, keyCode) in PlaybackBlocker.pauseKeyEvents()) {
+        fun dispatchStopPause() {
+            for ((action, keyCode) in PlaybackBlocker.stopKeyEvents() + PlaybackBlocker.pauseKeyEvents()) {
                 audioManager.dispatchMediaKeyEvent(KeyEvent(action, keyCode))
             }
-            Log.i(TAG, "MEDIA_PAUSE dispatched")
+            Log.i(TAG, "MEDIA_STOP+PAUSE dispatched")
         }
 
-        dispatchPause()
+        fun broadcastMediaStop() {
+            for ((action, keyCode) in PlaybackBlocker.stopKeyEvents()) {
+                sendOrderedBroadcast(
+                    Intent(Intent.ACTION_MEDIA_BUTTON).putExtra(
+                        Intent.EXTRA_KEY_EVENT, KeyEvent(action, keyCode)
+                    ),
+                    null,
+                )
+            }
+            Log.i(TAG, "MEDIA_STOP broadcast sent")
+        }
+
+        broadcastMediaStop()
+        dispatchStopPause()
         val poll = object : Runnable {
             override fun run() {
                 if (PlaybackBlocker.shouldContinuePolling(audioManager.isMusicActive, suppressAttempts)) {
-                    dispatchPause()
+                    broadcastMediaStop()
+                    dispatchStopPause()
                     suppressAttempts++
                     handler.postDelayed(this, PlaybackBlocker.POLL_INTERVAL_MS)
                 } else {
@@ -134,9 +163,29 @@ class BluetoothMonitorService : Service() {
         handler.postDelayed(poll, PlaybackBlocker.POLL_INTERVAL_MS)
     }
 
+    private fun stealAudioFocus(audioManager: AudioManager) {
+        if (audioFocusRequest != null) return
+        val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+            .setOnAudioFocusChangeListener(focusListener)
+            .build()
+        if (audioManager.requestAudioFocus(request) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            audioFocusRequest = request
+            Log.i(TAG, "Transient audio focus acquired")
+        }
+    }
+
+    private fun abandonAudioFocus() {
+        val request = audioFocusRequest ?: return
+        audioFocusRequest = null
+        val audioManager = getSystemService(AudioManager::class.java) ?: return
+        audioManager.abandonAudioFocusRequest(request)
+        Log.i(TAG, "Audio focus abandoned")
+    }
+
     private fun restoreSuppressedVolume() {
         suppressPoll?.let { handler.removeCallbacks(it) }
         suppressPoll = null
+        abandonAudioFocus()
         val saved = suppressSavedVolume
         suppressSavedVolume = null
         suppressAttempts = 0

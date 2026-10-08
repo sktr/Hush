@@ -39,6 +39,14 @@ class PlaybackBlockerTest {
     }
 
     @Test
+    fun stopSequenceUsesStopKeyDownAndUp() {
+        val events = PlaybackBlocker.stopKeyEvents()
+        assertEquals(2, events.size)
+        assertEquals(KeyEvent.ACTION_DOWN to KeyEvent.KEYCODE_MEDIA_STOP, events[0])
+        assertEquals(KeyEvent.ACTION_UP to KeyEvent.KEYCODE_MEDIA_STOP, events[1])
+    }
+
+    @Test
     fun stopsPollingWhenPausedOrTimedOut() {
         assertFalse(PlaybackBlocker.shouldContinuePolling(isPlaying = false, attempt = 0))
         assertFalse(

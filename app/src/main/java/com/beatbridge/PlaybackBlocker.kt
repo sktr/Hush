@@ -15,6 +15,11 @@ object PlaybackBlocker {
         KeyEvent.ACTION_UP to KeyEvent.KEYCODE_MEDIA_PAUSE,
     )
 
+    fun stopKeyEvents(): List<Pair<Int, Int>> = listOf(
+        KeyEvent.ACTION_DOWN to KeyEvent.KEYCODE_MEDIA_STOP,
+        KeyEvent.ACTION_UP to KeyEvent.KEYCODE_MEDIA_STOP,
+    )
+
     fun shouldRestoreVolume(isPlaying: Boolean): Boolean = !isPlaying
 
     fun shouldContinuePolling(isPlaying: Boolean, attempt: Int): Boolean =
