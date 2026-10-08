@@ -7,11 +7,14 @@ import android.bluetooth.BluetoothManager
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
+import android.widget.ScrollView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -89,6 +92,7 @@ class MainActivity : AppCompatActivity() {
         setupSearch()
         setupAnyDeviceToggle()
         setupLanguageSwitcher()
+        setupDebugLog()
         checkPermissionsAndLoad()
         updateStatusLabel()
         binding.tvWhatsNew.setOnClickListener {
@@ -147,6 +151,52 @@ class MainActivity : AppCompatActivity() {
     private fun setupLanguageSwitcher() {
         updateLanguageSetting()
         binding.languageSetting.setOnClickListener { showLanguagePicker() }
+    }
+
+    private fun setupDebugLog() {
+        DebugLog.init(this)
+        binding.debugLogSetting.setOnClickListener { showDebugLog() }
+    }
+
+    private fun showDebugLog() {
+        val logText = DebugLog.readText().ifEmpty { getString(R.string.debug_log_empty) }
+        val textView = TextView(this).apply {
+            text = logText
+            typeface = Typeface.MONOSPACE
+            textSize = 11f
+            setTextIsSelectable(true)
+            val pad = (12 * resources.displayMetrics.density).toInt()
+            setPadding(pad, pad, pad, pad)
+        }
+        val scroll = ScrollView(this).apply {
+            addView(textView)
+            layoutParams = android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                (400 * resources.displayMetrics.density).toInt(),
+            )
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.debug_log)
+            .setView(scroll)
+            .setPositiveButton(R.string.action_close, null)
+            .setNeutralButton(R.string.action_share) { _, _ -> shareDebugLog(logText) }
+            .setNegativeButton(R.string.action_clear) { _, _ ->
+                DebugLog.clear()
+                Toast.makeText(this, getString(R.string.debug_log_cleared), Toast.LENGTH_SHORT).show()
+            }
+            .show()
+    }
+
+    private fun shareDebugLog(text: String) {
+        startActivity(
+            Intent.createChooser(
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, text)
+                },
+                getString(R.string.debug_log),
+            )
+        )
     }
 
     private fun showLanguagePicker() {

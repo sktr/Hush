@@ -57,5 +57,12 @@
     <string name="watching_one_device">選択したデバイス 1 台を監視中</string>
     <string name="watching_devices">選択したデバイス %1$d 台を監視中</string>
     <string name="unknown_device">不明なデバイス</string>
+    <string name="debug_log">デバッグログ</string>
+    <string name="debug_log_desc">接続・抑止の履歴 (不具合調査用)</string>
+    <string name="debug_log_empty">まだログがありません。Bluetooth機器を接続してください。</string>
+    <string name="debug_log_cleared">ログを消去しました</string>
+    <string name="action_share">共有</string>
+    <string name="action_clear">消去</string>
+    <string name="action_close">閉じる</string>
     <string name="companion_support_unavailable">このスマートフォンではコンパニオンデバイス機能を利用できません</string>
 </resources>

@@ -59,5 +59,12 @@
     <string name="watching_one_device" tools:ignore="MissingTranslation">Watching 1 selected device</string>
     <string name="watching_devices" tools:ignore="MissingTranslation">Watching %1$d selected devices</string>
     <string name="unknown_device" tools:ignore="MissingTranslation">Unknown device</string>
+    <string name="debug_log" tools:ignore="MissingTranslation">Debug log</string>
+    <string name="debug_log_desc" tools:ignore="MissingTranslation">Connection and suppression history for troubleshooting</string>
+    <string name="debug_log_empty" tools:ignore="MissingTranslation">No log yet. Connect a Bluetooth device first.</string>
+    <string name="debug_log_cleared" tools:ignore="MissingTranslation">Log cleared</string>
+    <string name="action_share" tools:ignore="MissingTranslation">Share</string>
+    <string name="action_clear" tools:ignore="MissingTranslation">Clear</string>
+    <string name="action_close" tools:ignore="MissingTranslation">Close</string>
     <string name="companion_support_unavailable" tools:ignore="MissingTranslation">Companion device support is unavailable on this phone</string>
 </resources>

@@ -47,12 +47,12 @@ class BluetoothMonitorService : Service() {
 
             when (intent.action) {
                 BluetoothDevice.ACTION_ACL_CONNECTED -> device?.let {
-                    Log.i(TAG, "ACL connected: ${it.address}")
+                    DebugLog.i("ACL connected: ${it.address}")
                     maybeHandleDeviceConnected(it)
                 }
                 BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
                     device?.let {
-                        Log.i(TAG, "ACL disconnected: ${it.address}")
+                        DebugLog.i("ACL disconnected: ${it.address}")
                         lastHandledConnections.remove(it.address)
                     }
                 }
@@ -61,7 +61,7 @@ class BluetoothMonitorService : Service() {
                         BluetoothA2dp.EXTRA_STATE, BluetoothA2dp.STATE_DISCONNECTED
                     )
                     if (state == BluetoothA2dp.STATE_CONNECTED) device?.let {
-                        Log.i(TAG, "A2DP connected: ${it.address}")
+                        DebugLog.i("A2DP connected: ${it.address}")
                         maybeHandleDeviceConnected(it)
                     }
                 }
@@ -71,6 +71,7 @@ class BluetoothMonitorService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        DebugLog.init(this)
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, buildNotification())
         val filter = IntentFilter(BluetoothDevice.ACTION_ACL_CONNECTED).apply {
@@ -78,7 +79,7 @@ class BluetoothMonitorService : Service() {
             addAction(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED)
         }
         registerReceiver(bluetoothReceiver, filter)
-        Log.i(TAG, "Monitor service created")
+        DebugLog.i("Monitor service created")
     }
 
     private fun isAudioDevice(device: BluetoothDevice): Boolean {
@@ -95,7 +96,7 @@ class BluetoothMonitorService : Service() {
         val now = SystemClock.elapsedRealtime()
         val previous = lastHandledConnections[device.address]
         if (isDuplicateConnection(previous, now)) {
-            Log.i(TAG, "Ignoring duplicate connection callback for ${device.address}")
+            DebugLog.i("Ignoring duplicate connection callback for ${device.address}")
             return
         }
         lastHandledConnections[device.address] = now
@@ -105,13 +106,19 @@ class BluetoothMonitorService : Service() {
     private fun handleDeviceConnected(device: BluetoothDevice) {
         val prefs = getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE)
         val anyDevice = prefs.getBoolean(MainActivity.PREF_ANY_DEVICE, false)
-        if (anyDevice && !isAudioDevice(device)) return
+        if (anyDevice && !isAudioDevice(device)) {
+            DebugLog.i("Skipped non-audio device ${device.address} (any-device mode)")
+            return
+        }
         if (!anyDevice) {
             val selectedAddresses = prefs.getStringSet(MainActivity.PREF_SELECTED_DEVICES, emptySet()) ?: emptySet()
-            if (selectedAddresses.isEmpty() || device.address !in selectedAddresses) return
+            if (selectedAddresses.isEmpty() || device.address !in selectedAddresses) {
+                DebugLog.i("Skipped unselected device ${device.address}")
+                return
+            }
         }
 
-        Log.i(TAG, "Handling configured device connection: ${device.address}")
+        DebugLog.i("Handling configured device connection: ${device.address}")
         suppressAutoplay()
     }
 
@@ -121,6 +128,7 @@ class BluetoothMonitorService : Service() {
         if (suppressSavedVolume == null) {
             suppressSavedVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
         }
+        DebugLog.i("Suppress start (savedVol=$suppressSavedVolume)")
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, PlaybackBlocker.MUTE_VOLUME, 0)
         stealAudioFocus(audioManager)
         suppressPoll?.let { handler.removeCallbacks(it) }
@@ -130,7 +138,7 @@ class BluetoothMonitorService : Service() {
             for ((action, keyCode) in PlaybackBlocker.stopKeyEvents() + PlaybackBlocker.pauseKeyEvents()) {
                 audioManager.dispatchMediaKeyEvent(KeyEvent(action, keyCode))
             }
-            Log.i(TAG, "MEDIA_STOP+PAUSE dispatched")
+            DebugLog.i("Poll #$suppressAttempts playing=${audioManager.isMusicActive} STOP+PAUSE sent")
         }
 
         fun broadcastMediaStop() {
@@ -142,7 +150,6 @@ class BluetoothMonitorService : Service() {
                     null,
                 )
             }
-            Log.i(TAG, "MEDIA_STOP broadcast sent")
         }
 
         broadcastMediaStop()
@@ -170,7 +177,9 @@ class BluetoothMonitorService : Service() {
             .build()
         if (audioManager.requestAudioFocus(request) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             audioFocusRequest = request
-            Log.i(TAG, "Transient audio focus acquired")
+            DebugLog.i("Transient audio focus acquired")
+        } else {
+            DebugLog.i("Audio focus request denied")
         }
     }
 
@@ -179,7 +188,7 @@ class BluetoothMonitorService : Service() {
         audioFocusRequest = null
         val audioManager = getSystemService(AudioManager::class.java) ?: return
         audioManager.abandonAudioFocusRequest(request)
-        Log.i(TAG, "Audio focus abandoned")
+        DebugLog.i("Audio focus abandoned")
     }
 
     private fun restoreSuppressedVolume() {
@@ -187,12 +196,13 @@ class BluetoothMonitorService : Service() {
         suppressPoll = null
         abandonAudioFocus()
         val saved = suppressSavedVolume
+        val attempts = suppressAttempts
         suppressSavedVolume = null
         suppressAttempts = 0
         if (saved == null) return
         val audioManager = getSystemService(AudioManager::class.java) ?: return
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, saved, 0)
-        Log.i(TAG, "Volume restored to $saved")
+        DebugLog.i("Volume restored to $saved (polls=$attempts)")
     }
 
     private fun createNotificationChannel() {
@@ -265,7 +275,7 @@ class BluetoothMonitorService : Service() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
         unregisterReceiver(bluetoothReceiver)
-        Log.i(TAG, "Monitor service destroyed")
+        DebugLog.i("Monitor service destroyed")
     }
 
     companion object {
