@@ -128,6 +128,7 @@ class BluetoothMonitorService : Service() {
         val current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
         if (PlaybackBlocker.shouldAdoptVolume(suppressSavedVolume, current)) {
             suppressSavedVolume = current
+            persistLastKnownVolume(current)
             DebugLog.i("Adopted volume $current")
         }
         DebugLog.i("Suppress start (savedVol=$suppressSavedVolume)")
@@ -163,6 +164,7 @@ class BluetoothMonitorService : Service() {
                 val vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
                 if (PlaybackBlocker.shouldAdoptVolume(suppressSavedVolume, vol)) {
                     suppressSavedVolume = vol
+                    persistLastKnownVolume(vol)
                     DebugLog.i("Adopted volume $vol")
                 }
                 if (playing) {
@@ -207,11 +209,22 @@ class BluetoothMonitorService : Service() {
         DebugLog.i("Audio focus abandoned")
     }
 
+    private fun persistLastKnownVolume(volume: Int) {
+        getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE)
+            .edit()
+            .putInt(MainActivity.PREF_LAST_KNOWN_VOLUME, volume)
+            .apply()
+    }
+
     private fun restoreSuppressedVolume() {
         suppressPoll?.let { handler.removeCallbacks(it) }
         suppressPoll = null
         abandonAudioFocus()
-        val saved = suppressSavedVolume
+        // ponytail: fallback reuses last observed volume; stale if user lowered to 0 mid-connection, then per-device keying
+        val lastKnown = getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE)
+            .getInt(MainActivity.PREF_LAST_KNOWN_VOLUME, -1)
+            .takeIf { it >= 0 }
+        val saved = PlaybackBlocker.restoreVolume(suppressSavedVolume, lastKnown)
         val attempts = suppressAttempts
         suppressSavedVolume = null
         suppressAttempts = 0

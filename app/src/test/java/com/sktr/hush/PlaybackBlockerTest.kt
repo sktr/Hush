@@ -3,6 +3,7 @@ package com.sktr.hush
 import android.view.KeyEvent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -67,5 +68,20 @@ class PlaybackBlockerTest {
     fun keepsSavedVolumeWhenCurrentIsLower() {
         assertFalse(PlaybackBlocker.shouldAdoptVolume(saved = 10, current = 0))
         assertFalse(PlaybackBlocker.shouldAdoptVolume(saved = 10, current = 10))
+    }
+
+    @Test
+    fun prefersSavedVolumeOverLastKnown() {
+        assertEquals(3, PlaybackBlocker.restoreVolume(saved = 3, lastKnown = 15))
+    }
+
+    @Test
+    fun fallsBackToLastKnownWhenNothingSaved() {
+        assertEquals(15, PlaybackBlocker.restoreVolume(saved = null, lastKnown = 15))
+    }
+
+    @Test
+    fun returnsNullWhenNeitherSavedNorKnown() {
+        assertNull(PlaybackBlocker.restoreVolume(saved = null, lastKnown = null))
     }
 }

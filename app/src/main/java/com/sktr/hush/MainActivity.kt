@@ -290,6 +290,7 @@ class MainActivity : AppCompatActivity() {
         const val PREFS_NAME = "hush_prefs"
         const val PREF_SELECTED_DEVICES = "selected_device_addresses"
         const val PREF_ANY_DEVICE = "any_device"
+        const val PREF_LAST_KNOWN_VOLUME = "last_known_music_volume"
 
         internal fun requiredBluetoothPermissions(sdkInt: Int): List<String> =
             if (sdkInt >= Build.VERSION_CODES.S) {

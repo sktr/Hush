@@ -35,4 +35,11 @@ object PlaybackBlocker {
      * reset the user to 0. Never adopt downward (our own mute reads 0).
      */
     fun shouldAdoptVolume(saved: Int?, current: Int): Boolean = current > (saved ?: 0)
+
+    /**
+     * Prefer this session's saved volume; fall back to the last volume observed
+     * on a previous connection so a missed system restore (saved=null) does not
+     * leave the stream muted at 0.
+     */
+    fun restoreVolume(saved: Int?, lastKnown: Int?): Int? = saved ?: lastKnown
 }
