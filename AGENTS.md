@@ -1,6 +1,6 @@
 # AGENTS.md — Hush
 
-Android Kotlin single-module app (`:app`, `com.sktr.hush`, minSdk 26 / compile+target 36, Java 17, viewBinding). Japanese UI only (default `values/`, no other locales).
+Android Kotlin single-module app (`:app`, `com.sktr.hush`, minSdk 26 / compile+target 36, Java 17, viewBinding). English strings in default `values/`, Japanese in `values-ja/`; any non-Japanese locale falls back to English.
 
 ## Architecture (autoplay blocker)
 
@@ -14,7 +14,7 @@ Android Kotlin single-module app (`:app`, `com.sktr.hush`, minSdk 26 / compile+t
 
 - Companion-device association: removed on purpose (its system dialog asks for call/contact sync). Battery exemption (`Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` row) is the replacement reliability path.
 - `POST_NOTIFICATIONS`: removed on purpose. The FGS notice stays hidden while denied and blocking still works; the channel is `IMPORTANCE_MIN`. Never request it.
-- Extra locales: Japanese strings live in default `values/` (aapt requires a default). Do not re-add per-language dirs.
+- Extra locales: Japanese strings live in `values-ja/`, English in default `values/` (aapt requires a default, and non-Japanese locales fall back to it). Do not add locales beyond `ja` without user request.
 - Upstream history: squashed to a single commit so contributors stay `sktr`-only. Do not push old `BeatBridge` history/tags back.
 
 ## Commands
