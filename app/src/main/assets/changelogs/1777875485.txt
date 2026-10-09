@@ -1,2 +1,0 @@
-• Allow selecting multiple devices and apps
-• Add configurable launch delay (0–10 seconds)

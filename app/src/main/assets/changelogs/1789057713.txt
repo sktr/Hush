@@ -1,1 +1,0 @@
-• Fix per-device app overrides

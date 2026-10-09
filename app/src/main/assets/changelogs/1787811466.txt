@@ -1,3 +1,0 @@
-• Harden release pipeline and Bluetooth monitor state
-• Setup automated e2e and screenshot tests
-• Sync Google Play store metadata automatically (#10)

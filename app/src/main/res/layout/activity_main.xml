@@ -38,21 +38,6 @@
                     android:textSize="26sp"
                     android:textStyle="bold" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/tv_whats_new"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    android:minWidth="0dp"
-                    android:minHeight="0dp"
-                    android:paddingHorizontal="10dp"
-                    android:text="@string/whats_new"
-                    android:textAllCaps="false"
-                    android:textColor="@color/bb_primary"
-                    android:textSize="14sp" />
-
             </LinearLayout>
 
             <TextView
@@ -245,42 +230,11 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/language_setting"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginTop="16dp"
-            android:background="?attr/selectableItemBackground"
-            android:clickable="true"
-            android:focusable="true"
-            android:orientation="vertical"
-            android:paddingHorizontal="4dp"
-            android:paddingVertical="12dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/language"
-                android:textColor="@color/bb_on_surface"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tv_language_value"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="@string/system_default"
-                android:textColor="@color/bb_on_surface_dim"
-                android:textSize="12sp" />
-
-        </LinearLayout>
-
-        <LinearLayout
             android:id="@+id/debug_log_setting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="16dp"
             android:background="?attr/selectableItemBackground"
             android:clickable="true"
             android:focusable="true"
@@ -304,48 +258,6 @@
                 android:text="@string/debug_log_desc"
                 android:textColor="@color/bb_on_surface_dim"
                 android:textSize="12sp" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginTop="10dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
-                android:text="@string/about"
-                android:textColor="@color/bb_on_surface_dim"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tv_source_code"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center_vertical"
-                android:text="@string/source_code"
-                android:textColor="@color/bb_on_surface"
-                android:textSize="14sp" />
-
-            <TextView
-                android:id="@+id/tv_donate"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center_vertical"
-                android:text="@string/support_beatbridge"
-                android:textColor="@color/bb_on_surface"
-                android:textSize="14sp" />
 
         </LinearLayout>
 

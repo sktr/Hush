@@ -1,1 +1,0 @@
-• Require overlay permission before app auto-launch

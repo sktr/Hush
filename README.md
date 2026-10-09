@@ -1,42 +1,26 @@
 <div align="center">
-  <img src="docs/app-icon.svg" alt="BeatBridge app icon" width="144"/>
+  <img src="docs/app-icon.svg" alt="Autoplay Blocker app icon" width="144"/>
 
-  <h1>BeatBridge</h1>
+  <h1>Autoplay Blocker</h1>
 
-  <p><strong>Start playing automatically when your Bluetooth device connects.</strong></p>
-  <p>Choose a car, speaker, or pair of headphones and BeatBridge will resume your media when it connects.</p>
-
-  <p>
-    <a href="https://f-droid.org/packages/com.beatbridge"><img src="docs/get-it-on-fdroid.png" alt="Get it on F-Droid" height="72"/></a>
-    <a href="https://github.com/sktr/BeatBridge/releases"><img src="docs/get-it-on-github.svg" alt="Get it on GitHub" height="72"/></a>
-  </p>
+  <p><strong>Stop Bluetooth autoplay, silently.</strong></p>
+  <p>Pick your car or speaker. When it connects, the app mutes, stops the autoplay, then restores your volume.</p>
 </div>
 
 ## Download
 
 Get the latest test APK from the [releases page](https://github.com/sktr/BeatBridge/releases). On most phones use the `arm64-v8a` APK.
 
-## What it does
+## How it works
 
-Pick a Bluetooth device. When it connects, BeatBridge sends a normal Android play command to whatever media app you were using.
+1. Select a Bluetooth device (or any device).
+2. On connect the music stream is muted and transient audio focus is taken.
+3. A stop command is sent while playback is detected (up to ~15 seconds for late autoplay).
+4. The original volume is restored when playback stops or the window ends.
 
-That's it. No account, no ads, no analytics, and no internet connection required.
+An in-app debug log (connection history, volume values) is available for troubleshooting.
 
-## Features
+## Notes
 
-- Start playback when a selected Bluetooth device connects
-- Works with music, podcast, and audiobook apps that support Android media controls
-- Use **Ask on connect** if you'd rather choose what happens each time
-- Save a different equalizer profile for each device
-- Keeps working in the background after you close the app
-- Stores your settings on your phone
-
-## Screenshots
-
-<div align="center">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/01_empty_state.png" alt="BeatBridge empty state" width="46%"/>
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/02_devices_found.png" alt="BeatBridge paired devices" width="46%"/>
-  <br/>
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/03_device_selected.png" alt="BeatBridge selected device" width="46%"/>
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/04_full_list.png" alt="BeatBridge device list" width="46%"/>
-</div>
+- No account, no ads, no analytics, no internet connection required.
+- This is a personal fork repurposed from BeatBridge into a minimal autoplay blocker.
