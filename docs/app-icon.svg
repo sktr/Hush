@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="512" height="512" role="img" aria-label="Hush icon draft B9">
-  <rect width="108" height="108" rx="24" fill="#101022"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="512" height="512" role="img" aria-label="Hush app icon">
+  <rect width="108" height="108" fill="#000000"/>
   <path d="M28 44 h13 l15 -13 v46 l-15 -13 h-13 Z" fill="#F5F5F7"/>
   <path d="M62 40 a20 20 0 0 1 0 28" fill="none" stroke="#F5F5F7" stroke-width="6" stroke-linecap="round"/>
   <path d="M72 32 a32 32 0 0 1 0 44" fill="none" stroke="#F5F5F7" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
-  <line x1="26" y1="26" x2="82" y2="82" stroke="#101022" stroke-width="12" stroke-linecap="round"/>
+  <line x1="26" y1="26" x2="82" y2="82" stroke="#000000" stroke-width="12" stroke-linecap="round"/>
   <line x1="26" y1="26" x2="82" y2="82" stroke="#F5F5F7" stroke-width="6" stroke-linecap="round"/>
 </svg>

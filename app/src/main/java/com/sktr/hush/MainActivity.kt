@@ -236,14 +236,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkPermissionsAndLoad() {
+        // ponytail: never request POST_NOTIFICATIONS; denied permission hides the FGS notice
         if (hasBluetoothPermissions()) {
             loadPairedDevices()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
-                    PackageManager.PERMISSION_GRANTED
-            ) {
-                permissionLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS))
-            }
             return
         }
         permissionLauncher.launch(buildRequiredPermissions())
@@ -254,13 +249,8 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
 
-    private fun buildRequiredPermissions(): Array<String> {
-        val perms = requiredBluetoothPermissions(Build.VERSION.SDK_INT).toMutableList()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            perms.add(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        return perms.toTypedArray()
-    }
+    private fun buildRequiredPermissions(): Array<String> =
+        requiredBluetoothPermissions(Build.VERSION.SDK_INT).toTypedArray()
 
     @SuppressLint("MissingPermission")
     private fun loadPairedDevices() {

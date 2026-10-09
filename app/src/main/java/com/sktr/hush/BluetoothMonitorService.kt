@@ -227,7 +227,7 @@ class BluetoothMonitorService : Service() {
         val channel = NotificationChannel(
             CHANNEL_ID,
             getString(R.string.monitor_channel_name),
-            NotificationManager.IMPORTANCE_LOW
+            NotificationManager.IMPORTANCE_MIN
         ).apply {
             description = getString(R.string.monitor_channel_desc)
         }
