@@ -9,7 +9,7 @@
 
 ## Download
 
-Get the latest test APK from the [releases page](https://github.com/sktr/BeatBridge/releases). On most phones use the `arm64-v8a` APK.
+Get the latest test APK from the [releases page](https://github.com/sktr/Hush/releases). On most phones use the `arm64-v8a` APK.
 
 ## How it works
 
