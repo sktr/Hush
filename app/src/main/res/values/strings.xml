@@ -11,9 +11,6 @@
     <string name="selected">選択済み</string>
     <string name="bluetooth_not_supported">このデバイスは Bluetooth に対応していません</string>
     <string name="bluetooth_permission_required">ペア設定済みデバイスを表示するには Bluetooth 権限が必要です</string>
-    <string name="background_reliability_enabled">バックグラウンド接続の信頼性を有効にしました</string>
-    <string name="companion_setup_skipped">コンパニオン設定をスキップしました。通常の監視は引き続き有効です</string>
-    <string name="companion_setup_unavailable">コンパニオン設定を利用できません: %1$s</string>
     <string name="removed_item">削除: %1$s</string>
     <string name="added_item">追加: %1$s</string>
     <string name="monitor_channel_name">Hush モニター</string>
@@ -31,5 +28,7 @@
     <string name="action_share">共有</string>
     <string name="action_clear">消去</string>
     <string name="action_close">閉じる</string>
-    <string name="companion_support_unavailable">このスマートフォンではコンパニオンデバイス機能を利用できません</string>
+    <string name="battery_optimization">電池の最適化</string>
+    <string name="battery_action_needed">タップしてバックグラウンド動作を許可</string>
+    <string name="battery_exempt">バックグラウンド動作を許可済み</string>
 </resources>

@@ -9,7 +9,6 @@ import android.app.Service
 import android.bluetooth.BluetoothA2dp
 import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -21,7 +20,6 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.SystemClock
-import android.util.Log
 import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
 
@@ -249,42 +247,7 @@ class BluetoothMonitorService : Service() {
             )
             .build()
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
-            ACTION_COMPANION_CONNECTED -> {
-                val address = intent.getStringExtra(EXTRA_DEVICE_ADDRESS)
-                if (!address.isNullOrBlank()) {
-                    Log.i(TAG, "Companion service reported connected: $address")
-                    handleCompanionConnection(address)
-                }
-            }
-            ACTION_COMPANION_DISCONNECTED -> {
-                val address = intent.getStringExtra(EXTRA_DEVICE_ADDRESS)
-                if (!address.isNullOrBlank()) {
-                    Log.i(TAG, "Companion service reported disconnected: $address")
-                    lastHandledConnections.remove(address)
-                }
-            }
-        }
-        return START_STICKY
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun handleCompanionConnection(address: String) {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S &&
-            checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED
-        ) {
-            Log.w(TAG, "Ignoring companion callback without BLUETOOTH_CONNECT")
-            return
-        }
-        try {
-            val bluetoothManager = getSystemService(BluetoothManager::class.java)
-            val device = bluetoothManager.adapter?.getRemoteDevice(address) ?: return
-            maybeHandleDeviceConnected(device)
-        } catch (e: RuntimeException) {
-            Log.w(TAG, "Unable to resolve companion device $address", e)
-        }
-    }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -297,19 +260,11 @@ class BluetoothMonitorService : Service() {
     }
 
     companion object {
-        private const val TAG = "BeatBridge"
+        private const val TAG = "Hush"
         private const val CHANNEL_ID = "hush_monitor"
         private const val NOTIFICATION_ID = 1
 
-        private const val ACTION_COMPANION_CONNECTED = "com.sktr.hush.action.COMPANION_CONNECTED"
-        private const val ACTION_COMPANION_DISCONNECTED = "com.sktr.hush.action.COMPANION_DISCONNECTED"
-        private const val EXTRA_DEVICE_ADDRESS = "device_address"
         internal const val CONNECTION_DEDUPE_MS = 3_000L
-
-        fun companionConnectionIntent(context: Context, address: String, connected: Boolean): Intent =
-            Intent(context, BluetoothMonitorService::class.java)
-                .setAction(if (connected) ACTION_COMPANION_CONNECTED else ACTION_COMPANION_DISCONNECTED)
-                .putExtra(EXTRA_DEVICE_ADDRESS, address)
 
         internal fun isDuplicateConnection(
             lastHandledAt: Long?,

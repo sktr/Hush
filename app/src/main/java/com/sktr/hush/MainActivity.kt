@@ -8,15 +8,17 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -32,7 +34,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private val deviceList = mutableListOf<BtDevice>()
     private lateinit var deviceAdapter: DeviceAdapter
-    private var pendingCompanionAddress: String? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -45,26 +46,6 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(
                 this,
                 getString(R.string.bluetooth_permission_required),
-                Toast.LENGTH_LONG
-            ).show()
-        }
-    }
-
-    private val companionAssociationLauncher = registerForActivityResult(
-        ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        val address = pendingCompanionAddress ?: return@registerForActivityResult
-        pendingCompanionAddress = null
-        if (result.resultCode == RESULT_OK && CompanionDeviceSupport.finishAssociation(this, address)) {
-            Toast.makeText(
-                this,
-                getString(R.string.background_reliability_enabled),
-                Toast.LENGTH_SHORT
-            ).show()
-        } else {
-            Toast.makeText(
-                this,
-                getString(R.string.companion_setup_skipped),
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -88,6 +69,7 @@ class MainActivity : AppCompatActivity() {
         setupSearch()
         setupAnyDeviceToggle()
         setupDebugLog()
+        setupBatteryRow()
         checkPermissionsAndLoad()
         updateStatusLabel()
 
@@ -132,6 +114,39 @@ class MainActivity : AppCompatActivity() {
             updateStatusLabel()
             syncMonitorService()
         }
+    }
+
+    private fun setupBatteryRow() {
+        binding.batterySetting.setOnClickListener { requestBatteryExemption() }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateBatteryLabel()
+    }
+
+    private fun isBatteryExempt(): Boolean {
+        val power = getSystemService(PowerManager::class.java) ?: return false
+        return power.isIgnoringBatteryOptimizations(packageName)
+    }
+
+    private fun updateBatteryLabel() {
+        binding.tvBatteryValue.setText(
+            if (isBatteryExempt()) R.string.battery_exempt else R.string.battery_action_needed
+        )
+    }
+
+    private fun requestBatteryExemption() {
+        if (isBatteryExempt()) {
+            updateBatteryLabel()
+            return
+        }
+        startActivity(
+            Intent(
+                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                Uri.parse("package:$packageName"),
+            )
+        )
     }
 
     private fun setupDebugLog() {
@@ -192,47 +207,15 @@ class MainActivity : AppCompatActivity() {
         val displayName = device.name.ifEmpty { device.address }
         if (device.address in current) {
             current.remove(device.address)
-            CompanionDeviceSupport.removeAssociation(this, device.address)
             Toast.makeText(this, getString(R.string.removed_item, displayName), Toast.LENGTH_SHORT).show()
         } else {
             current.add(device.address)
             Toast.makeText(this, getString(R.string.added_item, displayName), Toast.LENGTH_SHORT).show()
-            requestCompanionAssociation(device)
         }
         prefs.edit { putStringSet(PREF_SELECTED_DEVICES, current) }
         deviceAdapter.updateSelections(current)
         updateStatusLabel()
         syncMonitorService()
-    }
-
-    private fun requestCompanionAssociation(device: BtDevice) {
-        if (!CompanionDeviceSupport.isSupported(this) || pendingCompanionAddress != null) return
-        CompanionDeviceSupport.requestAssociation(
-            activity = this,
-            address = device.address,
-            onAssociationPending = { intentSender ->
-                pendingCompanionAddress = device.address
-                companionAssociationLauncher.launch(
-                    IntentSenderRequest.Builder(intentSender).build()
-                )
-            },
-            onAssociationReady = {
-                Toast.makeText(
-                    this,
-                    getString(R.string.background_reliability_enabled),
-                    Toast.LENGTH_SHORT
-                ).show()
-            },
-            onFailure = { error ->
-                if (!error.isNullOrBlank()) {
-                    Toast.makeText(
-                        this,
-                        getString(R.string.companion_setup_unavailable, error),
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            },
-        )
     }
 
     private fun checkPermissionsAndLoad() {
@@ -261,13 +244,6 @@ class MainActivity : AppCompatActivity() {
                 .sortedBy { it.name.ifEmpty { it.address } }
         )
         deviceAdapter.filter(binding.etDeviceSearch.text.toString())
-
-        val selectedAddresses = prefs.getStringSet(PREF_SELECTED_DEVICES, emptySet()) ?: emptySet()
-        selectedAddresses.forEach { address ->
-            if (CompanionDeviceSupport.isAssociated(this, address)) {
-                CompanionDeviceSupport.startObserving(this, address)
-            }
-        }
 
         val isEmpty = deviceList.isEmpty()
         binding.tvEmpty.visibility = if (isEmpty) View.VISIBLE else View.GONE

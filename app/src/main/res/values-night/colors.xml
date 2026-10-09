@@ -6,7 +6,7 @@
     <color name="bb_on_primary_container">#FFEADDFF</color>
     <color name="bb_on_primary_container_dim">#CCEADDFF</color>
     <color name="bb_primary_container_divider">#33EADDFF</color>
-    <color name="bb_background">#FF141218</color>
+    <color name="bb_background">#FF000000</color>
     <color name="bb_surface">#FF1D1B20</color>
     <color name="bb_surface_variant">#FF2B2930</color>
     <color name="bb_on_surface">#FFE6E1E5</color>
