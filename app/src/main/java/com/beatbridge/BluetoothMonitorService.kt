@@ -62,7 +62,9 @@ class BluetoothMonitorService : Service() {
                     )
                     if (state == BluetoothA2dp.STATE_CONNECTED) device?.let {
                         DebugLog.i("A2DP connected: ${it.address}")
-                        maybeHandleDeviceConnected(it)
+                        // ponytail: A2DP bypasses dedupe so late system volume restore is adopted
+                        lastHandledConnections[it.address] = SystemClock.elapsedRealtime()
+                        handleDeviceConnected(it)
                     }
                 }
             }
@@ -124,9 +126,11 @@ class BluetoothMonitorService : Service() {
 
     private fun suppressAutoplay() {
         val audioManager = getSystemService(AudioManager::class.java) ?: return
-        // ponytail: re-entry keeps first saved volume, mute-stuck guard + onDestroy restore
-        if (suppressSavedVolume == null) {
-            suppressSavedVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        // ponytail: adopt upward only; early trigger reads pre-A2DP 0, system restores real vol later
+        val current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        if (PlaybackBlocker.shouldAdoptVolume(suppressSavedVolume, current)) {
+            suppressSavedVolume = current
+            DebugLog.i("Adopted volume $current")
         }
         DebugLog.i("Suppress start (savedVol=$suppressSavedVolume)")
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, PlaybackBlocker.MUTE_VOLUME, 0)
@@ -157,7 +161,16 @@ class BluetoothMonitorService : Service() {
         val poll = object : Runnable {
             override fun run() {
                 // ponytail: full-window suppression, no early restore (late autoplay slips through)
-                if (audioManager.isMusicActive) {
+                val playing = audioManager.isMusicActive
+                val vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+                if (PlaybackBlocker.shouldAdoptVolume(suppressSavedVolume, vol)) {
+                    suppressSavedVolume = vol
+                    DebugLog.i("Adopted volume $vol")
+                }
+                if (playing) {
+                    if (vol != PlaybackBlocker.MUTE_VOLUME) {
+                        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, PlaybackBlocker.MUTE_VOLUME, 0)
+                    }
                     broadcastMediaStop()
                     dispatchStopPause()
                 } else {

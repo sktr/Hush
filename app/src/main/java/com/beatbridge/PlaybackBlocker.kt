@@ -28,4 +28,11 @@ object PlaybackBlocker {
      * first inactive poll lets delayed starts slip through Audibly.
      */
     fun shouldContinuePolling(attempt: Int): Boolean = attempt < POLL_MAX_ATTEMPTS
+
+    /**
+     * Adopt upward only. The early trigger often reads 0 (pre-A2DP); when the
+     * system later applies the per-device volume, adopt it so restore does not
+     * reset the user to 0. Never adopt downward (our own mute reads 0).
+     */
+    fun shouldAdoptVolume(saved: Int?, current: Int): Boolean = current > (saved ?: 0)
 }

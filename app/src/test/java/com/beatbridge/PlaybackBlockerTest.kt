@@ -52,4 +52,20 @@ class PlaybackBlockerTest {
     fun stopsPollingAtMaxAttempts() {
         assertFalse(PlaybackBlocker.shouldContinuePolling(attempt = PlaybackBlocker.POLL_MAX_ATTEMPTS))
     }
+
+    @Test
+    fun adoptsVolumeWhenNothingSaved() {
+        assertTrue(PlaybackBlocker.shouldAdoptVolume(saved = null, current = 10))
+    }
+
+    @Test
+    fun adoptsVolumeWhenSavedZeroAndSystemRestores() {
+        assertTrue(PlaybackBlocker.shouldAdoptVolume(saved = 0, current = 10))
+    }
+
+    @Test
+    fun keepsSavedVolumeWhenCurrentIsLower() {
+        assertFalse(PlaybackBlocker.shouldAdoptVolume(saved = 10, current = 0))
+        assertFalse(PlaybackBlocker.shouldAdoptVolume(saved = 10, current = 10))
+    }
 }
