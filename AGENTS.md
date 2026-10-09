@@ -7,8 +7,15 @@ Android Kotlin single-module app (`:app`, `com.sktr.hush`, minSdk 26 / compile+t
 - `app/src/main/java/com/sktr/hush/BluetoothMonitorService.kt` — foreground service. `ACL_CONNECTED`/A2DP-connected → `suppressAutoplay()`: mute `STREAM_MUSIC` → steal transient audio focus → send `MEDIA_STOP` broadcast + `STOP`/`PAUSE` dispatch while `isMusicActive`, full ~15s window (`POLL_INTERVAL_MS` 1s × `POLL_MAX_ATTEMPTS` 15, no early restore) → restore volume + abandon focus on timeout/`onDestroy`. Saved volume adopts upward only (early trigger reads pre-A2DP 0; system per-device volume adopted later). A2DP bypasses the 3s connection dedupe.
 - `PlaybackBlocker.kt` — pure logic only (`pauseKeyEvents()`, `stopKeyEvents()`, `shouldContinuePolling()`, `shouldAdoptVolume()`). Keep it Android-framework-free so unit tests stay JVM-only.
 - `DebugLog.kt` + `LogStore.kt` — persistent in-app debug log (logcat tag `Hush`, file `hush-debug.log`, 300 entries / 64KB cap). Service writes key events there; `MainActivity` shows it with share/clear.
-- `MainActivity.kt` — device selection prefs (`PREF_SELECTED_DEVICES`, `PREF_ANY_DEVICE`) + `shouldMonitor()` gating for the service. Nothing else belongs there.
+- `MainActivity.kt` — device selection prefs (`PREF_SELECTED_DEVICES`, `PREF_ANY_DEVICE`) + `shouldMonitor()` gating, debug-log dialog, battery-exemption row. Nothing else belongs there.
 - Unit tests: `app/src/test/java/com/sktr/hush/`. E2E/screenshots under `app/src/androidTest/` need an emulator — don't run locally by default.
+
+## Do not re-add
+
+- Companion-device association: removed on purpose (its system dialog asks for call/contact sync). Battery exemption (`Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` row) is the replacement reliability path.
+- `POST_NOTIFICATIONS`: removed on purpose. The FGS notice stays hidden while denied and blocking still works; the channel is `IMPORTANCE_MIN`. Never request it.
+- Extra locales: Japanese strings live in default `values/` (aapt requires a default). Do not re-add per-language dirs.
+- Upstream history: squashed to a single commit so contributors stay `sktr`-only. Do not push old `BeatBridge` history/tags back.
 
 ## Commands
 
@@ -27,5 +34,6 @@ Android Kotlin single-module app (`:app`, `com.sktr.hush`, minSdk 26 / compile+t
 ## APK / release gotchas
 
 - ABI splits are on (`isUniversalApk = false`) → `assembleDebug` emits **4 APKs**, no universal: `app/build/outputs/apk/debug/app-{arm64-v8a,armeabi-v7a,x86_64,x86}-debug.apk`. For real-device testing use **arm64-v8a**. CI's artifact path (`app-debug.apk`) does not match split output — don't rely on it.
-- Manual preview pattern used before: `gh release create <tag> --prerelease` with the 4 APKs attached (e.g. `autoplay-blocker-preview1/2`). Work happens on `feat/*` branches; push the branch before cutting the release so APKs match code.
+- Manual preview pattern used before: `gh release create <tag> --prerelease` with the 4 APKs attached (e.g. `hush-preview5`). Work lands directly on `main`; verify APKs match HEAD before cutting the release (`aapt2 dump badging` shows `com.sktr.hush` + label `Hush`).
+- Launcher icon: keep the glyph inside the adaptive-icon safe zone (content scaled ~0.7 centered in `ic_launcher_foreground.xml`, mirrored in `docs/app-icon.svg`). Full-bleed vectors get cropped by the launcher mask.
 - Plan docs live in `docs/superpowers/plans/` — read the matching plan before touching blocker logic.
