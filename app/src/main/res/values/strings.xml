@@ -1,0 +1,35 @@
+<resources>
+    <string name="app_name">Hush</string>
+    <string name="tagline">Bluetooth接続時の自動再生を無音で止めます。</string>
+    <string name="choose_device">抑止するデバイスを選択</string>
+    <string name="any_bluetooth_device">任意の Bluetooth デバイス</string>
+    <string name="use_apps_every_connection">すべての接続で自動再生を抑止</string>
+    <string name="bluetooth_devices">Bluetooth デバイス</string>
+    <string name="choose_paired_devices">接続時にミュート＋停止します。</string>
+    <string name="search_devices">デバイスを検索</string>
+    <string name="no_paired_devices">ペア設定済みデバイスがありません\nAndroid の設定でペア設定してから戻ってください。</string>
+    <string name="selected">選択済み</string>
+    <string name="bluetooth_not_supported">このデバイスは Bluetooth に対応していません</string>
+    <string name="bluetooth_permission_required">ペア設定済みデバイスを表示するには Bluetooth 権限が必要です</string>
+    <string name="background_reliability_enabled">バックグラウンド接続の信頼性を有効にしました</string>
+    <string name="companion_setup_skipped">コンパニオン設定をスキップしました。通常の監視は引き続き有効です</string>
+    <string name="companion_setup_unavailable">コンパニオン設定を利用できません: %1$s</string>
+    <string name="removed_item">削除: %1$s</string>
+    <string name="added_item">追加: %1$s</string>
+    <string name="monitor_channel_name">Hush モニター</string>
+    <string name="monitor_channel_desc">自動再生抑止のためデバイス接続を検出します</string>
+    <string name="persistent_notification">バックグラウンドで自動再生を抑止中</string>
+    <string name="ready_any_bluetooth">すべての Bluetooth 接続を待機中</string>
+    <string name="watching_device">%1$s を監視中</string>
+    <string name="watching_one_device">選択したデバイス 1 台を監視中</string>
+    <string name="watching_devices">選択したデバイス %1$d 台を監視中</string>
+    <string name="unknown_device">不明なデバイス</string>
+    <string name="debug_log">デバッグログ</string>
+    <string name="debug_log_desc">接続・抑止の履歴 (不具合調査用)</string>
+    <string name="debug_log_empty">まだログがありません。Bluetooth機器を接続してください。</string>
+    <string name="debug_log_cleared">ログを消去しました</string>
+    <string name="action_share">共有</string>
+    <string name="action_clear">消去</string>
+    <string name="action_close">閉じる</string>
+    <string name="companion_support_unavailable">このスマートフォンではコンパニオンデバイス機能を利用できません</string>
+</resources>
