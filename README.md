@@ -24,4 +24,3 @@ An in-app debug log (connection history, volume values) is available for trouble
 
 - No account, no ads, no analytics, no internet connection required.
 - English UI by default, Japanese on Japanese devices. Personal project.
-- The foreground-service notice is unnecessary: leave notifications off for Hush in system settings (blocking still works).
