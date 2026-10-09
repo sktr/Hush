@@ -156,10 +156,15 @@ class BluetoothMonitorService : Service() {
         dispatchStopPause()
         val poll = object : Runnable {
             override fun run() {
-                if (PlaybackBlocker.shouldContinuePolling(audioManager.isMusicActive, suppressAttempts)) {
+                // ponytail: full-window suppression, no early restore (late autoplay slips through)
+                if (audioManager.isMusicActive) {
                     broadcastMediaStop()
                     dispatchStopPause()
-                    suppressAttempts++
+                } else {
+                    DebugLog.i("Poll #$suppressAttempts idle")
+                }
+                suppressAttempts++
+                if (PlaybackBlocker.shouldContinuePolling(suppressAttempts)) {
                     handler.postDelayed(this, PlaybackBlocker.POLL_INTERVAL_MS)
                 } else {
                     restoreSuppressedVolume()

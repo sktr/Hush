@@ -22,6 +22,10 @@ object PlaybackBlocker {
 
     fun shouldRestoreVolume(isPlaying: Boolean): Boolean = !isPlaying
 
-    fun shouldContinuePolling(isPlaying: Boolean, attempt: Int): Boolean =
-        isPlaying && attempt < POLL_MAX_ATTEMPTS
+    /**
+     * Time-based only: keep the mute window open for the full duration so late
+     * autoplay (starting seconds after connect) is caught. Early restore on
+     * first inactive poll lets delayed starts slip through Audibly.
+     */
+    fun shouldContinuePolling(attempt: Int): Boolean = attempt < POLL_MAX_ATTEMPTS
 }

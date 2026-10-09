@@ -20,6 +20,7 @@ Android Kotlin single-module app (`:app`, `com.beatbridge`, minSdk 26 / compile+
 
 - CI (`main.yml`): `./gradlew test` + `assembleDebug` on push/PR to `main`; commits containing `[release-bump]` skip build. Fortnightly scheduled releases.
 - `version.properties` is the single source for `versionName`/`versionCode`. Don't hardcode versions in `build.gradle.kts`. The `playStore` Gradle property remaps versionCode (`base * 100 + 51`); default builds use ABI-split codes.
+- Fresh shells need `export ANDROID_HOME=$HOME/Library/Android/sdk` before any `./gradlew` invocation, otherwise the build fails with "SDK location not found".
 - `scripts/` holds shell guards (`test_bluetooth_permission_guard.sh`, `test_lint_fixes.sh`, `test_reproducible_build_config.sh`) — check CI usage before trusting them blindly.
 
 ## APK / release gotchas
