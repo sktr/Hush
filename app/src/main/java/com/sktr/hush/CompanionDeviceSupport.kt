@@ -1,4 +1,4 @@
-package com.beatbridge
+package com.sktr.hush
 
 import android.app.Activity
 import android.companion.AssociationRequest

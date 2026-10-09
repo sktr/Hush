@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "BeatBridge"
+rootProject.name = "Hush"
 include(":app")

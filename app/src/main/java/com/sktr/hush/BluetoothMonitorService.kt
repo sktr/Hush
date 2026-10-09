@@ -1,4 +1,4 @@
-package com.beatbridge
+package com.sktr.hush
 
 import android.annotation.SuppressLint
 import android.Manifest
@@ -298,11 +298,11 @@ class BluetoothMonitorService : Service() {
 
     companion object {
         private const val TAG = "BeatBridge"
-        private const val CHANNEL_ID = "beatbridge_monitor"
+        private const val CHANNEL_ID = "hush_monitor"
         private const val NOTIFICATION_ID = 1
 
-        private const val ACTION_COMPANION_CONNECTED = "com.beatbridge.action.COMPANION_CONNECTED"
-        private const val ACTION_COMPANION_DISCONNECTED = "com.beatbridge.action.COMPANION_DISCONNECTED"
+        private const val ACTION_COMPANION_CONNECTED = "com.sktr.hush.action.COMPANION_CONNECTED"
+        private const val ACTION_COMPANION_DISCONNECTED = "com.sktr.hush.action.COMPANION_DISCONNECTED"
         private const val EXTRA_DEVICE_ADDRESS = "device_address"
         internal const val CONNECTION_DEDUPE_MS = 3_000L
 

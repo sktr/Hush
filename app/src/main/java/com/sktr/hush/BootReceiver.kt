@@ -1,4 +1,4 @@
-package com.beatbridge
+package com.sktr.hush
 
 import android.Manifest
 import android.content.BroadcastReceiver
@@ -8,9 +8,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
-import com.beatbridge.MainActivity.Companion.PREFS_NAME
-import com.beatbridge.MainActivity.Companion.PREF_SELECTED_DEVICES
-import com.beatbridge.MainActivity.Companion.PREF_ANY_DEVICE
+import com.sktr.hush.MainActivity.Companion.PREFS_NAME
+import com.sktr.hush.MainActivity.Companion.PREF_SELECTED_DEVICES
+import com.sktr.hush.MainActivity.Companion.PREF_ANY_DEVICE
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {

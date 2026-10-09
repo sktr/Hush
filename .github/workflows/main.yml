@@ -313,7 +313,7 @@ jobs:
           for APK in "$OUTDIR"/app-*-release.apk; do
             test -f "$APK"
             ABI=$(basename "$APK" | sed 's/app-\(.*\)-release\.apk/\1/')
-            cp "$APK" "$OUTDIR/BeatBridge-${RELEASE_TAG}-${ABI}.apk"
+            cp "$APK" "$OUTDIR/Hush-${RELEASE_TAG}-${ABI}.apk"
             APK_COUNT=$((APK_COUNT + 1))
           done
           test "$APK_COUNT" -eq 4
@@ -322,7 +322,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-apks
-          path: app/build/outputs/apk/release/BeatBridge-*.apk
+          path: app/build/outputs/apk/release/Hush-*.apk
           if-no-files-found: error
 
       - name: Publish verified release commit and tag
@@ -337,9 +337,9 @@ jobs:
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          name: BeatBridge ${{ steps.version.outputs.tag }}
+          name: Hush ${{ steps.version.outputs.tag }}
           generate_release_notes: true
-          files: app/build/outputs/apk/release/BeatBridge-*.apk
+          files: app/build/outputs/apk/release/Hush-*.apk
 
   virustotal:
     needs: release
@@ -361,10 +361,10 @@ jobs:
           vt_api_key: ${{ secrets.VT_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: |
-            release-apks/BeatBridge-${{ needs.release.outputs.tag }}-arm64-v8a.apk
-            release-apks/BeatBridge-${{ needs.release.outputs.tag }}-armeabi-v7a.apk
-            release-apks/BeatBridge-${{ needs.release.outputs.tag }}-x86_64.apk
-            release-apks/BeatBridge-${{ needs.release.outputs.tag }}-x86.apk
+            release-apks/Hush-${{ needs.release.outputs.tag }}-arm64-v8a.apk
+            release-apks/Hush-${{ needs.release.outputs.tag }}-armeabi-v7a.apk
+            release-apks/Hush-${{ needs.release.outputs.tag }}-x86_64.apk
+            release-apks/Hush-${{ needs.release.outputs.tag }}-x86.apk
 
       - name: Append VirusTotal links to release
         env:

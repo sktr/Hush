@@ -1,4 +1,4 @@
-package com.beatbridge
+package com.sktr.hush
 
 import android.Manifest
 import android.os.Build
@@ -9,7 +9,7 @@ class MainActivityPrefsTest {
 
     @Test
     fun prefsName_isCorrect() {
-        assertEquals("beatbridge_prefs", MainActivity.PREFS_NAME)
+        assertEquals("hush_prefs", MainActivity.PREFS_NAME)
     }
 
     @Test

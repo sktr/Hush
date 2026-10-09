@@ -1,4 +1,4 @@
-package com.beatbridge
+package com.sktr.hush
 
 import android.companion.CompanionDeviceService
 import android.companion.DevicePresenceEvent
@@ -8,7 +8,7 @@ import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 
 @RequiresApi(Build.VERSION_CODES.S)
-class BeatBridgeCompanionService : CompanionDeviceService() {
+class HushCompanionService : CompanionDeviceService() {
 
     @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
     override fun onDeviceAppeared(address: String) {
@@ -43,6 +43,6 @@ class BeatBridgeCompanionService : CompanionDeviceService() {
     }
 
     private companion object {
-        const val TAG = "BeatBridge"
+        const val TAG = "Hush"
     }
 }

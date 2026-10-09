@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="docs/app-icon.svg" alt="Autoplay Blocker app icon" width="144"/>
+  <img src="docs/app-icon.svg" alt="Hush app icon" width="144"/>
 
-  <h1>Autoplay Blocker</h1>
+  <h1>Hush</h1>
 
   <p><strong>Stop Bluetooth autoplay, silently.</strong></p>
   <p>Pick your car or speaker. When it connects, the app mutes, stops the autoplay, then restores your volume.</p>
@@ -23,4 +23,4 @@ An in-app debug log (connection history, volume values) is available for trouble
 ## Notes
 
 - No account, no ads, no analytics, no internet connection required.
-- This is a personal fork repurposed from BeatBridge into a minimal autoplay blocker.
+- Japanese UI only. Personal project.

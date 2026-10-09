@@ -1,10 +1,10 @@
-package com.beatbridge
+package com.sktr.hush
 
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.beatbridge.databinding.ItemDeviceBinding
+import com.sktr.hush.databinding.ItemDeviceBinding
 
 /**
  * Test-only adapter that renders the same item_device.xml layout as DeviceAdapter,

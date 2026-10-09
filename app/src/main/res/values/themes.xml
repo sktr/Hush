@@ -1,5 +1,5 @@
 <resources>
-    <style name="Theme.BeatBridge" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.Hush" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/bb_primary</item>
         <item name="colorOnPrimary">@color/bb_on_primary</item>
         <item name="colorPrimaryContainer">@color/bb_primary_container</item>

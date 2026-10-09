@@ -1,4 +1,4 @@
-package com.beatbridge
+package com.sktr.hush
 
 import android.content.Context
 import android.util.Log
@@ -9,11 +9,11 @@ import java.util.Locale
 
 /**
  * Persistent debug log for field troubleshooting. Every entry goes to logcat
- * ("BeatBridge" tag) and to a capped file, readable in-app without adb.
+ * ("Hush" tag) and to a capped file, readable in-app without adb.
  */
 object DebugLog {
-    private const val TAG = "BeatBridge"
-    private const val FILE_NAME = "beatbridge-debug.log"
+    private const val TAG = "Hush"
+    private const val FILE_NAME = "hush-debug.log"
     private const val MAX_FILE_BYTES = 64 * 1024L
 
     private val store = LogStore()

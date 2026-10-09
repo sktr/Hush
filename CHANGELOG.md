@@ -1,6 +1,6 @@
 # Changelog
 
-Repurposed from BeatBridge into a minimal Bluetooth autoplay blocker. Upstream history removed.
+Standalone Bluetooth autoplay blocker. Japanese UI only.
 
 ## Unreleased
 

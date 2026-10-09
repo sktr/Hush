@@ -1,4 +1,4 @@
-package com.beatbridge
+package com.sktr.hush
 
 import android.graphics.Canvas
 import android.graphics.Paint

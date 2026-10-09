@@ -32,7 +32,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.BeatBridge">
+        android:theme="@style/Theme.Hush">
 
         <activity
             android:name=".MainActivity"
@@ -52,7 +52,7 @@
         <!-- Android's companion-device service is a second wake-up path for associated devices.
              The system can bind this even when the normal BeatBridge process is not running. -->
         <service
-            android:name=".BeatBridgeCompanionService"
+            android:name=".HushCompanionService"
             android:exported="true"
             android:permission="android.permission.BIND_COMPANION_DEVICE_SERVICE"
             tools:targetApi="31">

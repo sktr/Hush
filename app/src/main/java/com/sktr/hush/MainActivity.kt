@@ -1,4 +1,4 @@
-package com.beatbridge
+package com.sktr.hush
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -22,7 +22,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.beatbridge.databinding.ActivityMainBinding
+import com.sktr.hush.databinding.ActivityMainBinding
 import androidx.core.content.edit
 
 class MainActivity : AppCompatActivity() {
@@ -321,7 +321,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        const val PREFS_NAME = "beatbridge_prefs"
+        const val PREFS_NAME = "hush_prefs"
         const val PREF_SELECTED_DEVICES = "selected_device_addresses"
         const val PREF_ANY_DEVICE = "any_device"
 

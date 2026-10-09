@@ -15,11 +15,11 @@ val playStoreBuild = providers.gradleProperty("playStore")
 val playStoreVersionCode = baseVersionCode * 100 + 51
 
 android {
-    namespace = "com.beatbridge"
+    namespace = "com.sktr.hush"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.beatbridge"
+        applicationId = "com.sktr.hush"
         minSdk = 26
         targetSdk = 36
         versionCode = if (playStoreBuild) playStoreVersionCode else baseVersionCode

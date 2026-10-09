@@ -12,15 +12,15 @@ test -s "$TEST_APK"
 
 adb install -t -r "$APP_APK"
 adb install -t -r "$TEST_APK"
-adb shell pm grant com.beatbridge android.permission.BLUETOOTH_CONNECT
-adb shell pm grant com.beatbridge android.permission.POST_NOTIFICATIONS
+adb shell pm grant com.sktr.hush android.permission.BLUETOOTH_CONNECT
+adb shell pm grant com.sktr.hush android.permission.POST_NOTIFICATIONS
 
 mkdir -p artifacts/e2e artifacts/screenshots
 adb shell am instrument -w \
-  com.beatbridge.test/androidx.test.runner.AndroidJUnitRunner \
+  com.sktr.hush.test/androidx.test.runner.AndroidJUnitRunner \
   | tee artifacts/e2e/instrumentation.log
 
-adb pull /sdcard/Android/data/com.beatbridge/files/screenshots/. artifacts/screenshots/
+adb pull /sdcard/Android/data/com.sktr.hush/files/screenshots/. artifacts/screenshots/
 
 for screenshot in \
   01_empty_state.png \

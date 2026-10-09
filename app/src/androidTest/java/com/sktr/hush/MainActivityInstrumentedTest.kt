@@ -1,4 +1,4 @@
-package com.beatbridge
+package com.sktr.hush
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -40,7 +40,7 @@ class MainActivityInstrumentedTest {
 
     @Test
     fun appContext_hasCorrectPackageName() {
-        assertEquals("com.beatbridge", context.packageName)
+        assertEquals("com.sktr.hush", context.packageName)
     }
 
     @Test

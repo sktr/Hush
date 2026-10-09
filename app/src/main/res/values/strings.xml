@@ -1,35 +1,35 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name">Autoplay Blocker</string>
-    <string name="tagline">Silence autoplay when Bluetooth connects.</string>
-    <string name="choose_device">Choose devices to block</string>
-    <string name="any_bluetooth_device">Any Bluetooth device</string>
-    <string name="use_apps_every_connection">Block autoplay on every connection</string>
-    <string name="bluetooth_devices">Bluetooth devices</string>
-    <string name="choose_paired_devices">Muted and stopped when these connect.</string>
-    <string name="search_devices">Search devices</string>
-    <string name="no_paired_devices">No paired devices yet\nPair one in Android Settings, then return here.</string>
-    <string name="selected">Selected</string>
-    <string name="bluetooth_not_supported">Bluetooth is not supported on this device</string>
-    <string name="bluetooth_permission_required">Bluetooth permission is required to list paired devices</string>
-    <string name="background_reliability_enabled">Background connection reliability enabled</string>
-    <string name="companion_setup_skipped">Companion setup skipped; regular monitoring is still active</string>
-    <string name="companion_setup_unavailable">Companion setup unavailable: %1$s</string>
-    <string name="removed_item">Removed: %1$s</string>
-    <string name="added_item">Added: %1$s</string>
-    <string name="monitor_channel_name">Autoplay Blocker Monitor</string>
-    <string name="monitor_channel_desc">Detects your devices to block autoplay</string>
-    <string name="persistent_notification">Blocking autoplay in background</string>
-    <string name="ready_any_bluetooth" tools:ignore="MissingTranslation">Ready for any Bluetooth connection</string>
-    <string name="watching_device" tools:ignore="MissingTranslation">Watching %1$s</string>
-    <string name="watching_one_device" tools:ignore="MissingTranslation">Watching 1 selected device</string>
-    <string name="watching_devices" tools:ignore="MissingTranslation">Watching %1$d selected devices</string>
-    <string name="unknown_device" tools:ignore="MissingTranslation">Unknown device</string>
-    <string name="debug_log" tools:ignore="MissingTranslation">Debug log</string>
-    <string name="debug_log_desc" tools:ignore="MissingTranslation">Connection and suppression history for troubleshooting</string>
-    <string name="debug_log_empty" tools:ignore="MissingTranslation">No log yet. Connect a Bluetooth device first.</string>
-    <string name="debug_log_cleared" tools:ignore="MissingTranslation">Log cleared</string>
-    <string name="action_share" tools:ignore="MissingTranslation">Share</string>
-    <string name="action_clear" tools:ignore="MissingTranslation">Clear</string>
-    <string name="action_close" tools:ignore="MissingTranslation">Close</string>
-    <string name="companion_support_unavailable" tools:ignore="MissingTranslation">Companion device support is unavailable on this phone</string>
+<resources>
+    <string name="app_name">Hush</string>
+    <string name="tagline">Bluetooth接続時の自動再生を無音で止めます。</string>
+    <string name="choose_device">抑止するデバイスを選択</string>
+    <string name="any_bluetooth_device">任意の Bluetooth デバイス</string>
+    <string name="use_apps_every_connection">すべての接続で自動再生を抑止</string>
+    <string name="bluetooth_devices">Bluetooth デバイス</string>
+    <string name="choose_paired_devices">接続時にミュート＋停止します。</string>
+    <string name="search_devices">デバイスを検索</string>
+    <string name="no_paired_devices">ペア設定済みデバイスがありません\nAndroid の設定でペア設定してから戻ってください。</string>
+    <string name="selected">選択済み</string>
+    <string name="bluetooth_not_supported">このデバイスは Bluetooth に対応していません</string>
+    <string name="bluetooth_permission_required">ペア設定済みデバイスを表示するには Bluetooth 権限が必要です</string>
+    <string name="background_reliability_enabled">バックグラウンド接続の信頼性を有効にしました</string>
+    <string name="companion_setup_skipped">コンパニオン設定をスキップしました。通常の監視は引き続き有効です</string>
+    <string name="companion_setup_unavailable">コンパニオン設定を利用できません: %1$s</string>
+    <string name="removed_item">削除: %1$s</string>
+    <string name="added_item">追加: %1$s</string>
+    <string name="monitor_channel_name">Hush モニター</string>
+    <string name="monitor_channel_desc">自動再生抑止のためデバイス接続を検出します</string>
+    <string name="persistent_notification">バックグラウンドで自動再生を抑止中</string>
+    <string name="ready_any_bluetooth">すべての Bluetooth 接続を待機中</string>
+    <string name="watching_device">%1$s を監視中</string>
+    <string name="watching_one_device">選択したデバイス 1 台を監視中</string>
+    <string name="watching_devices">選択したデバイス %1$d 台を監視中</string>
+    <string name="unknown_device">不明なデバイス</string>
+    <string name="debug_log">デバッグログ</string>
+    <string name="debug_log_desc">接続・抑止の履歴 (不具合調査用)</string>
+    <string name="debug_log_empty">まだログがありません。Bluetooth機器を接続してください。</string>
+    <string name="debug_log_cleared">ログを消去しました</string>
+    <string name="action_share">共有</string>
+    <string name="action_clear">消去</string>
+    <string name="action_close">閉じる</string>
+    <string name="companion_support_unavailable">このスマートフォンではコンパニオンデバイス機能を利用できません</string>
 </resources>

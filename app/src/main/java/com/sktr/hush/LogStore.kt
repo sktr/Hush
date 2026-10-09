@@ -1,4 +1,4 @@
-package com.beatbridge
+package com.sktr.hush
 
 /** Framework-free capped log buffer. In-memory mirror of the debug file. */
 class LogStore(private val maxEntries: Int = MAX_ENTRIES) {

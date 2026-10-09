@@ -1,4 +1,4 @@
-package com.beatbridge
+package com.sktr.hush
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
