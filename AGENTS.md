@@ -26,7 +26,7 @@ Android Kotlin single-module app (`:app`, `com.sktr.hush`, minSdk 26 / compile+t
 ./gradlew :app:assembleDebug          # debug APKs
 ```
 
-- CI (`main.yml`): `./gradlew test` + `assembleDebug` on push/PR to `main`; commits containing `[release-bump]` skip build. Fortnightly scheduled releases.
+- CI (`main.yml`): unit tests + `assembleDebug` (+ E2E) on push/PR to `main`. No scheduled releases (removed; push artifacts are the APK source).
 - `version.properties` is the single source for `versionName`/`versionCode`. Don't hardcode versions in `build.gradle.kts`. The `playStore` Gradle property remaps versionCode (`base * 100 + 51`); default builds use ABI-split codes.
 - Fresh shells need `export ANDROID_HOME=$HOME/Library/Android/sdk` before any `./gradlew` invocation, otherwise the build fails with "SDK location not found".
 - `scripts/` holds shell guards (`test_bluetooth_permission_guard.sh`, `test_lint_fixes.sh`, `test_reproducible_build_config.sh`) — check CI usage before trusting them blindly.
