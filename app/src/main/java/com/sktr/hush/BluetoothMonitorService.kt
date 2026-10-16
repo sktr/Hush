@@ -100,14 +100,23 @@ class BluetoothMonitorService : Service() {
         }
         val manager = getSystemService(BluetoothManager::class.java) ?: return
         val connected = (
-            manager.getConnectedDevices(BluetoothProfile.A2DP) +
-                manager.getConnectedDevices(BluetoothProfile.HEADSET)
+            connectedOn(manager, BluetoothProfile.A2DP) +
+                connectedOn(manager, BluetoothProfile.HEADSET)
             ).distinctBy { it.address }
         for (device in connected) {
             DebugLog.i("Already connected at service start: ${device.address}")
             maybeHandleDeviceConnected(device)
         }
     }
+
+    /** Some devices (emulators, BT-less hardware) reject unsupported profiles. */
+    @SuppressLint("MissingPermission")
+    private fun connectedOn(manager: BluetoothManager, profile: Int): List<BluetoothDevice> =
+        try {
+            manager.getConnectedDevices(profile)
+        } catch (_: IllegalArgumentException) {
+            emptyList()
+        }
 
     private fun isAudioDevice(device: BluetoothDevice): Boolean {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S &&
