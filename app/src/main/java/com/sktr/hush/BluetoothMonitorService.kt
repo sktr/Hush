@@ -9,6 +9,8 @@ import android.app.Service
 import android.bluetooth.BluetoothA2dp
 import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -80,6 +82,31 @@ class BluetoothMonitorService : Service() {
         }
         registerReceiver(bluetoothReceiver, filter)
         DebugLog.i("Monitor service created")
+        suppressExistingConnections()
+    }
+
+    /**
+     * A device already connected before the service started never fires an
+     * ACL/A2DP broadcast, so autoplay slips through (first run after reboot or
+     * a STICKY restart). Enumerate connected audio profiles and route them
+     * through the same handler the broadcast path uses.
+     */
+    @SuppressLint("MissingPermission")
+    private fun suppressExistingConnections() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S &&
+            checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        val manager = getSystemService(BluetoothManager::class.java) ?: return
+        val connected = (
+            manager.getConnectedDevices(BluetoothProfile.A2DP) +
+                manager.getConnectedDevices(BluetoothProfile.HEADSET)
+            ).distinctBy { it.address }
+        for (device in connected) {
+            DebugLog.i("Already connected at service start: ${device.address}")
+            maybeHandleDeviceConnected(device)
+        }
     }
 
     private fun isAudioDevice(device: BluetoothDevice): Boolean {
