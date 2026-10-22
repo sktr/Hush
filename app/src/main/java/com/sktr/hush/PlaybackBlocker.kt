@@ -9,6 +9,9 @@ object PlaybackBlocker {
     const val RESTORE_DELAY_MS: Long = 4_000L
     const val POLL_INTERVAL_MS: Long = 1_000L
     const val POLL_MAX_ATTEMPTS: Int = 15
+    const val SETTLE_ATTEMPTS: Int = 3
+    const val POST_RESTORE_CHECKS: Int = 4
+    const val SETTLE_MAX_CHECKS: Int = 30
 
     fun pauseKeyEvents(): List<Pair<Int, Int>> = listOf(
         KeyEvent.ACTION_DOWN to KeyEvent.KEYCODE_MEDIA_PAUSE,
@@ -42,4 +45,12 @@ object PlaybackBlocker {
      * leave the stream muted at 0.
      */
     fun restoreVolume(saved: Int?, lastKnown: Int?): Int? = saved ?: lastKnown
+
+    /**
+     * Releasing audio focus can un-pause the app we just stopped, so the window
+     * end keeps the stream muted and re-stops any resume. Active playback resets
+     * the countdown instead of draining it.
+     */
+    fun settleCountdown(remaining: Int, active: Boolean, resetTo: Int): Int =
+        if (active) resetTo else remaining - 1
 }

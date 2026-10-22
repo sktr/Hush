@@ -84,4 +84,18 @@ class PlaybackBlockerTest {
     fun returnsNullWhenNeitherSavedNorKnown() {
         assertNull(PlaybackBlocker.restoreVolume(saved = null, lastKnown = null))
     }
+
+    @Test
+    fun settleResetsWhilePlaybackKeepsResuming() {
+        assertEquals(
+            PlaybackBlocker.SETTLE_ATTEMPTS,
+            PlaybackBlocker.settleCountdown(remaining = 1, active = true, resetTo = PlaybackBlocker.SETTLE_ATTEMPTS),
+        )
+    }
+
+    @Test
+    fun settleCountsDownWhileQuiet() {
+        assertEquals(2, PlaybackBlocker.settleCountdown(remaining = 3, active = false, resetTo = 3))
+        assertEquals(0, PlaybackBlocker.settleCountdown(remaining = 1, active = false, resetTo = 3))
+    }
 }

@@ -32,6 +32,7 @@ class BluetoothMonitorService : Service() {
     private var suppressSavedVolume: Int? = null
     private var suppressAttempts = 0
     private var suppressPoll: Runnable? = null
+    private var settlePoll: Runnable? = null
     private var audioFocusRequest: AudioFocusRequest? = null
     private val focusListener = AudioManager.OnAudioFocusChangeListener { }
 
@@ -171,6 +172,8 @@ class BluetoothMonitorService : Service() {
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, PlaybackBlocker.MUTE_VOLUME, 0)
         stealAudioFocus(audioManager)
         suppressPoll?.let { handler.removeCallbacks(it) }
+        settlePoll?.let { handler.removeCallbacks(it) }
+        settlePoll = null
         suppressAttempts = 0
 
         fun dispatchStopPause() {
@@ -252,9 +255,12 @@ class BluetoothMonitorService : Service() {
             .apply()
     }
 
-    private fun restoreSuppressedVolume() {
+    private fun restoreSuppressedVolume(settle: Boolean = true) {
         suppressPoll?.let { handler.removeCallbacks(it) }
         suppressPoll = null
+        settlePoll?.let { handler.removeCallbacks(it) }
+        settlePoll = null
+        // ponytail: release first; focus gain can make the stopped app resume, so settle while still muted
         abandonAudioFocus()
         // ponytail: fallback reuses last observed volume; stale if user lowered to 0 mid-connection, then per-device keying
         val lastKnown = getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE)
@@ -266,8 +272,74 @@ class BluetoothMonitorService : Service() {
         suppressAttempts = 0
         if (saved == null) return
         val audioManager = getSystemService(AudioManager::class.java) ?: return
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, saved, 0)
-        DebugLog.i("Volume restored to $saved (polls=$attempts)")
+        if (!settle) {
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, saved, 0)
+            DebugLog.i("Volume restored to $saved (polls=$attempts)")
+            return
+        }
+        settleThenRestore(audioManager, saved, attempts)
+    }
+
+    /**
+     * Window end releases focus, which can un-pause the app we stopped. Stay
+     * muted, keep stopping any resume, then restore the volume only after the
+     * stream is quiet (hard cap so a stubborn player cannot mute forever).
+     */
+    private fun settleThenRestore(audioManager: AudioManager, saved: Int, attempts: Int) {
+        var mutedLeft = PlaybackBlocker.SETTLE_ATTEMPTS
+        var restoredLeft = PlaybackBlocker.POST_RESTORE_CHECKS
+        var volumeRestored = false
+        var checks = 0
+        val settlePollRunnable = object : Runnable {
+            override fun run() {
+                val playing = audioManager.isMusicActive
+                if (playing) {
+                    for ((action, keyCode) in PlaybackBlocker.stopKeyEvents() + PlaybackBlocker.pauseKeyEvents()) {
+                        audioManager.dispatchMediaKeyEvent(KeyEvent(action, keyCode))
+                    }
+                }
+                checks++
+                if (checks >= PlaybackBlocker.SETTLE_MAX_CHECKS) {
+                    if (!volumeRestored) {
+                        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, saved, 0)
+                        DebugLog.i("Volume restored to $saved (polls=$attempts)")
+                    }
+                    settlePoll = null
+                    DebugLog.i("Settle capped (polls=$attempts, checks=$checks)")
+                    return
+                }
+                if (!volumeRestored) {
+                    mutedLeft = PlaybackBlocker.settleCountdown(
+                        mutedLeft,
+                        playing,
+                        PlaybackBlocker.SETTLE_ATTEMPTS,
+                    )
+                    if (mutedLeft > 0) {
+                        handler.postDelayed(this, PlaybackBlocker.POLL_INTERVAL_MS)
+                        return
+                    }
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, saved, 0)
+                    DebugLog.i("Volume restored to $saved (polls=$attempts)")
+                    volumeRestored = true
+                    restoredLeft = PlaybackBlocker.POST_RESTORE_CHECKS
+                    handler.postDelayed(this, PlaybackBlocker.POLL_INTERVAL_MS)
+                    return
+                }
+                restoredLeft = PlaybackBlocker.settleCountdown(
+                    restoredLeft,
+                    playing,
+                    PlaybackBlocker.POST_RESTORE_CHECKS,
+                )
+                if (restoredLeft > 0) {
+                    handler.postDelayed(this, PlaybackBlocker.POLL_INTERVAL_MS)
+                } else {
+                    settlePoll = null
+                    DebugLog.i("Settle done (polls=$attempts)")
+                }
+            }
+        }
+        settlePoll = settlePollRunnable
+        handler.postDelayed(settlePollRunnable, PlaybackBlocker.POLL_INTERVAL_MS)
     }
 
     private fun createNotificationChannel() {
@@ -301,7 +373,7 @@ class BluetoothMonitorService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        restoreSuppressedVolume()
+        restoreSuppressedVolume(settle = false)
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
         unregisterReceiver(bluetoothReceiver)
