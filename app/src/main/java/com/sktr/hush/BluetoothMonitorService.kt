@@ -2,6 +2,7 @@ package com.sktr.hush
 
 import android.annotation.SuppressLint
 import android.Manifest
+import android.app.KeyguardManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -18,9 +19,11 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.media.AudioPlaybackConfiguration
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.PowerManager
 import android.os.SystemClock
 import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
@@ -33,8 +36,35 @@ class BluetoothMonitorService : Service() {
     private var suppressAttempts = 0
     private var suppressPoll: Runnable? = null
     private var settlePoll: Runnable? = null
+    private var guardArmed = false
     private var audioFocusRequest: AudioFocusRequest? = null
     private val focusListener = AudioManager.OnAudioFocusChangeListener { }
+
+    /**
+     * Fires on every playback state change, so a start minutes after connect
+     * (e.g. the head unit touching absolute volume) is caught without polling.
+     * The 15s window still owns the initial autoplay; this only acts afterwards.
+     */
+    private val audioPlaybackCallback = object : AudioManager.AudioPlaybackCallback() {
+        override fun onPlaybackConfigChanged(configs: MutableList<AudioPlaybackConfiguration>) {
+            val audioManager = getSystemService(AudioManager::class.java) ?: return
+            if (!audioManager.isMusicActive) return
+            val userPresent = isUserPresent()
+            val windowActive = suppressPoll != null || settlePoll != null
+            DebugLog.i("Playback active (armed=$guardArmed, window=$windowActive, unlocked=$userPresent)")
+            when (PlaybackBlocker.guardAction(guardArmed, windowActive, userPresent)) {
+                PlaybackBlocker.GuardAction.IGNORE -> Unit
+                PlaybackBlocker.GuardAction.RELEASE -> {
+                    guardArmed = false
+                    DebugLog.i("Guard: user present, allowing playback")
+                }
+                PlaybackBlocker.GuardAction.SUPPRESS -> {
+                    DebugLog.i("Guard: locked, re-suppressing")
+                    suppressAutoplay()
+                }
+            }
+        }
+    }
 
     private val bluetoothReceiver = object : BroadcastReceiver() {
         @SuppressLint("MissingPermission")
@@ -55,6 +85,10 @@ class BluetoothMonitorService : Service() {
                     device?.let {
                         DebugLog.i("ACL disconnected: ${it.address}")
                         lastHandledConnections.remove(it.address)
+                        if (guardArmed) {
+                            guardArmed = false
+                            restoreSuppressedVolume(settle = false)
+                        }
                     }
                 }
                 BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED -> {
@@ -82,6 +116,8 @@ class BluetoothMonitorService : Service() {
             addAction(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED)
         }
         registerReceiver(bluetoothReceiver, filter)
+        getSystemService(AudioManager::class.java)
+            ?.registerAudioPlaybackCallback(audioPlaybackCallback, handler)
         DebugLog.i("Monitor service created")
         suppressExistingConnections()
     }
@@ -156,6 +192,7 @@ class BluetoothMonitorService : Service() {
         }
 
         DebugLog.i("Handling configured device connection: ${device.address}")
+        guardArmed = true
         suppressAutoplay()
     }
 
@@ -248,8 +285,13 @@ class BluetoothMonitorService : Service() {
         DebugLog.i("Audio focus abandoned")
     }
 
-    private fun persistLastKnownVolume(volume: Int) {
-        getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE)
+    private fun isUserPresent(): Boolean {
+        val power = getSystemService(PowerManager::class.java) ?: return true
+        val keyguard = getSystemService(KeyguardManager::class.java)
+        return power.isInteractive && keyguard?.isKeyguardLocked != true
+    }
+
+    private fun persistLastKnownVolume(volume: Int) {        getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE)
             .edit()
             .putInt(MainActivity.PREF_LAST_KNOWN_VOLUME, volume)
             .apply()
@@ -373,6 +415,9 @@ class BluetoothMonitorService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        getSystemService(AudioManager::class.java)
+            ?.unregisterAudioPlaybackCallback(audioPlaybackCallback)
+        guardArmed = false
         restoreSuppressedVolume(settle = false)
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)

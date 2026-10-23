@@ -98,4 +98,36 @@ class PlaybackBlockerTest {
         assertEquals(2, PlaybackBlocker.settleCountdown(remaining = 3, active = false, resetTo = 3))
         assertEquals(0, PlaybackBlocker.settleCountdown(remaining = 1, active = false, resetTo = 3))
     }
+
+    @Test
+    fun guardIgnoresPlaybackWhenDisarmed() {
+        assertEquals(
+            PlaybackBlocker.GuardAction.IGNORE,
+            PlaybackBlocker.guardAction(armed = false, windowActive = false, userPresent = false),
+        )
+    }
+
+    @Test
+    fun guardIgnoresPlaybackInsideWindow() {
+        assertEquals(
+            PlaybackBlocker.GuardAction.IGNORE,
+            PlaybackBlocker.guardAction(armed = true, windowActive = true, userPresent = false),
+        )
+    }
+
+    @Test
+    fun guardSuppressesWhenPhoneIsLocked() {
+        assertEquals(
+            PlaybackBlocker.GuardAction.SUPPRESS,
+            PlaybackBlocker.guardAction(armed = true, windowActive = false, userPresent = false),
+        )
+    }
+
+    @Test
+    fun guardReleasesWhenUserUnlockedThePhone() {
+        assertEquals(
+            PlaybackBlocker.GuardAction.RELEASE,
+            PlaybackBlocker.guardAction(armed = true, windowActive = false, userPresent = true),
+        )
+    }
 }

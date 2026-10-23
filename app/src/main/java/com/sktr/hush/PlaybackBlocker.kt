@@ -53,4 +53,18 @@ object PlaybackBlocker {
      */
     fun settleCountdown(remaining: Int, active: Boolean, resetTo: Int): Int =
         if (active) resetTo else remaining - 1
+
+    enum class GuardAction { IGNORE, SUPPRESS, RELEASE }
+
+    /**
+     * The OS does not say who started playback, so approximate "manual" with the
+     * user being present (screen on and unlocked). Guard stays armed for the
+     * whole connection; the 15s window still handles the initial autoplay.
+     */
+    fun guardAction(armed: Boolean, windowActive: Boolean, userPresent: Boolean): GuardAction =
+        when {
+            !armed || windowActive -> GuardAction.IGNORE
+            userPresent -> GuardAction.RELEASE
+            else -> GuardAction.SUPPRESS
+        }
 }
