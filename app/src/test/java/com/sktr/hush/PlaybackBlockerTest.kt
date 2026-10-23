@@ -130,4 +130,20 @@ class PlaybackBlockerTest {
             PlaybackBlocker.guardAction(armed = true, windowActive = false, screenOn = true),
         )
     }
+
+    @Test
+    fun playbackTransitionReportsStartAndStop() {
+        assertEquals(
+            PlaybackBlocker.PlaybackTransition.STARTED,
+            PlaybackBlocker.playbackTransition(previous = false, active = true),
+        )
+        assertEquals(
+            PlaybackBlocker.PlaybackTransition.STOPPED,
+            PlaybackBlocker.playbackTransition(previous = true, active = false),
+        )
+        assertEquals(
+            PlaybackBlocker.PlaybackTransition.NONE,
+            PlaybackBlocker.playbackTransition(previous = true, active = true),
+        )
+    }
 }

@@ -68,4 +68,14 @@ object PlaybackBlocker {
             screenOn -> GuardAction.RELEASE
             else -> GuardAction.SUPPRESS
         }
+
+    enum class PlaybackTransition { NONE, STARTED, STOPPED }
+
+    /** Keeps debug logs to real start/stop edges, not every config change. */
+    fun playbackTransition(previous: Boolean, active: Boolean): PlaybackTransition =
+        when {
+            active == previous -> PlaybackTransition.NONE
+            active -> PlaybackTransition.STARTED
+            else -> PlaybackTransition.STOPPED
+        }
 }

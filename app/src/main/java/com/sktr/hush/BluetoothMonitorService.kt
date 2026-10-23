@@ -16,6 +16,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.database.ContentObserver
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.AudioPlaybackConfiguration
@@ -24,6 +25,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
 import android.os.SystemClock
+import android.provider.Settings
 import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
 
@@ -36,6 +38,8 @@ class BluetoothMonitorService : Service() {
     private var suppressPoll: Runnable? = null
     private var settlePoll: Runnable? = null
     private var guardArmed = false
+    private var lastPlaybackActive = false
+    private var lastLoggedVolume = -1
     private var audioFocusRequest: AudioFocusRequest? = null
     private val focusListener = AudioManager.OnAudioFocusChangeListener { }
 
@@ -47,10 +51,21 @@ class BluetoothMonitorService : Service() {
     private val audioPlaybackCallback = object : AudioManager.AudioPlaybackCallback() {
         override fun onPlaybackConfigChanged(configs: MutableList<AudioPlaybackConfiguration>) {
             val audioManager = getSystemService(AudioManager::class.java) ?: return
-            if (!audioManager.isMusicActive) return
+            val active = audioManager.isMusicActive
+            when (PlaybackBlocker.playbackTransition(lastPlaybackActive, active)) {
+                PlaybackBlocker.PlaybackTransition.NONE -> return
+                PlaybackBlocker.PlaybackTransition.STOPPED -> {
+                    lastPlaybackActive = false
+                    DebugLog.i("Playback stopped")
+                    return
+                }
+                PlaybackBlocker.PlaybackTransition.STARTED -> lastPlaybackActive = true
+            }
             val screenOn = isScreenOn()
             val windowActive = suppressPoll != null || settlePoll != null
-            DebugLog.i("Playback active (armed=$guardArmed, window=$windowActive, screenOn=$screenOn)")
+            val volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+            DebugLog.i("Playback started (armed=$guardArmed, window=$windowActive, screenOn=$screenOn, vol=$volume)")
+            DebugLog.i("Playing: ${configs.joinToString("; ") { it.toString() }.take(240)}")
             when (PlaybackBlocker.guardAction(guardArmed, windowActive, screenOn)) {
                 PlaybackBlocker.GuardAction.IGNORE -> Unit
                 PlaybackBlocker.GuardAction.RELEASE -> {
@@ -62,6 +77,24 @@ class BluetoothMonitorService : Service() {
                     suppressAutoplay()
                 }
             }
+        }
+    }
+
+    /** Logs only changes we did not make (mutes/restores go through [setMusicVolume]). */
+    private val volumeObserver = object : ContentObserver(handler) {
+        override fun onChange(selfChange: Boolean) {
+            val audioManager = getSystemService(AudioManager::class.java) ?: return
+            val volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+            if (volume == lastLoggedVolume) return
+            DebugLog.i("Volume changed $lastLoggedVolume -> $volume (armed=$guardArmed)")
+            lastLoggedVolume = volume
+        }
+    }
+
+    private val screenReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val state = if (intent.action == Intent.ACTION_SCREEN_ON) "on" else "off"
+            DebugLog.i("Screen $state (armed=$guardArmed)")
         }
     }
 
@@ -86,6 +119,7 @@ class BluetoothMonitorService : Service() {
                         lastHandledConnections.remove(it.address)
                         if (guardArmed) {
                             guardArmed = false
+                            DebugLog.i("Guard disarmed (device disconnected)")
                             restoreSuppressedVolume(settle = false)
                         }
                     }
@@ -115,9 +149,19 @@ class BluetoothMonitorService : Service() {
             addAction(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED)
         }
         registerReceiver(bluetoothReceiver, filter)
-        getSystemService(AudioManager::class.java)
-            ?.registerAudioPlaybackCallback(audioPlaybackCallback, handler)
-        DebugLog.i("Monitor service created")
+        registerReceiver(
+            screenReceiver,
+            IntentFilter().apply {
+                addAction(Intent.ACTION_SCREEN_ON)
+                addAction(Intent.ACTION_SCREEN_OFF)
+            },
+        )
+        contentResolver.registerContentObserver(Settings.System.CONTENT_URI, true, volumeObserver)
+        val audioManager = getSystemService(AudioManager::class.java)
+        lastPlaybackActive = audioManager?.isMusicActive == true
+        lastLoggedVolume = audioManager?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: -1
+        audioManager?.registerAudioPlaybackCallback(audioPlaybackCallback, handler)
+        DebugLog.i("Monitor service created (playing=$lastPlaybackActive, vol=$lastLoggedVolume)")
         suppressExistingConnections()
     }
 
@@ -192,6 +236,7 @@ class BluetoothMonitorService : Service() {
 
         DebugLog.i("Handling configured device connection: ${device.address}")
         guardArmed = true
+        DebugLog.i("Guard armed for ${device.address}")
         suppressAutoplay()
     }
 
@@ -205,7 +250,7 @@ class BluetoothMonitorService : Service() {
             DebugLog.i("Adopted volume $current")
         }
         DebugLog.i("Suppress start (savedVol=$suppressSavedVolume)")
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, PlaybackBlocker.MUTE_VOLUME, 0)
+        setMusicVolume(audioManager, PlaybackBlocker.MUTE_VOLUME, "mute")
         stealAudioFocus(audioManager)
         suppressPoll?.let { handler.removeCallbacks(it) }
         settlePoll?.let { handler.removeCallbacks(it) }
@@ -244,7 +289,7 @@ class BluetoothMonitorService : Service() {
                 }
                 if (playing) {
                     if (vol != PlaybackBlocker.MUTE_VOLUME) {
-                        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, PlaybackBlocker.MUTE_VOLUME, 0)
+                        setMusicVolume(audioManager, PlaybackBlocker.MUTE_VOLUME, "re-mute")
                     }
                     broadcastMediaStop()
                     dispatchStopPause()
@@ -287,7 +332,14 @@ class BluetoothMonitorService : Service() {
     private fun isScreenOn(): Boolean =
         getSystemService(PowerManager::class.java)?.isInteractive ?: true
 
-    private fun persistLastKnownVolume(volume: Int) {        getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE)
+    private fun setMusicVolume(audioManager: AudioManager, volume: Int, reason: String) {
+        lastLoggedVolume = volume
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0)
+        DebugLog.i("Volume set to $volume ($reason)")
+    }
+
+    private fun persistLastKnownVolume(volume: Int) {
+        getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE)
             .edit()
             .putInt(MainActivity.PREF_LAST_KNOWN_VOLUME, volume)
             .apply()
@@ -311,7 +363,7 @@ class BluetoothMonitorService : Service() {
         if (saved == null) return
         val audioManager = getSystemService(AudioManager::class.java) ?: return
         if (!settle) {
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, saved, 0)
+            setMusicVolume(audioManager, saved, "restore")
             DebugLog.i("Volume restored to $saved (polls=$attempts)")
             return
         }
@@ -339,7 +391,7 @@ class BluetoothMonitorService : Service() {
                 checks++
                 if (checks >= PlaybackBlocker.SETTLE_MAX_CHECKS) {
                     if (!volumeRestored) {
-                        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, saved, 0)
+                        setMusicVolume(audioManager, saved, "restore")
                         DebugLog.i("Volume restored to $saved (polls=$attempts)")
                     }
                     settlePoll = null
@@ -356,7 +408,7 @@ class BluetoothMonitorService : Service() {
                         handler.postDelayed(this, PlaybackBlocker.POLL_INTERVAL_MS)
                         return
                     }
-                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, saved, 0)
+                    setMusicVolume(audioManager, saved, "restore")
                     DebugLog.i("Volume restored to $saved (polls=$attempts)")
                     volumeRestored = true
                     restoredLeft = PlaybackBlocker.POST_RESTORE_CHECKS
@@ -413,6 +465,8 @@ class BluetoothMonitorService : Service() {
     override fun onDestroy() {
         getSystemService(AudioManager::class.java)
             ?.unregisterAudioPlaybackCallback(audioPlaybackCallback)
+        contentResolver.unregisterContentObserver(volumeObserver)
+        unregisterReceiver(screenReceiver)
         guardArmed = false
         restoreSuppressedVolume(settle = false)
         super.onDestroy()
