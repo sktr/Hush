@@ -58,13 +58,14 @@ object PlaybackBlocker {
 
     /**
      * The OS does not say who started playback, so approximate "manual" with the
-     * user being present (screen on and unlocked). Guard stays armed for the
-     * whole connection; the 15s window still handles the initial autoplay.
+     * screen being on (lock screen counts: media controls live there). The guard
+     * stays armed for the whole connection; the 15s window still owns the
+     * initial autoplay.
      */
-    fun guardAction(armed: Boolean, windowActive: Boolean, userPresent: Boolean): GuardAction =
+    fun guardAction(armed: Boolean, windowActive: Boolean, screenOn: Boolean): GuardAction =
         when {
             !armed || windowActive -> GuardAction.IGNORE
-            userPresent -> GuardAction.RELEASE
+            screenOn -> GuardAction.RELEASE
             else -> GuardAction.SUPPRESS
         }
 }

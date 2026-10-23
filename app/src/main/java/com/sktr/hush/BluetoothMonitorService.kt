@@ -2,7 +2,6 @@ package com.sktr.hush
 
 import android.annotation.SuppressLint
 import android.Manifest
-import android.app.KeyguardManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -49,17 +48,17 @@ class BluetoothMonitorService : Service() {
         override fun onPlaybackConfigChanged(configs: MutableList<AudioPlaybackConfiguration>) {
             val audioManager = getSystemService(AudioManager::class.java) ?: return
             if (!audioManager.isMusicActive) return
-            val userPresent = isUserPresent()
+            val screenOn = isScreenOn()
             val windowActive = suppressPoll != null || settlePoll != null
-            DebugLog.i("Playback active (armed=$guardArmed, window=$windowActive, unlocked=$userPresent)")
-            when (PlaybackBlocker.guardAction(guardArmed, windowActive, userPresent)) {
+            DebugLog.i("Playback active (armed=$guardArmed, window=$windowActive, screenOn=$screenOn)")
+            when (PlaybackBlocker.guardAction(guardArmed, windowActive, screenOn)) {
                 PlaybackBlocker.GuardAction.IGNORE -> Unit
                 PlaybackBlocker.GuardAction.RELEASE -> {
                     guardArmed = false
-                    DebugLog.i("Guard: user present, allowing playback")
+                    DebugLog.i("Guard: screen on, allowing playback")
                 }
                 PlaybackBlocker.GuardAction.SUPPRESS -> {
-                    DebugLog.i("Guard: locked, re-suppressing")
+                    DebugLog.i("Guard: screen off, re-suppressing")
                     suppressAutoplay()
                 }
             }
@@ -285,11 +284,8 @@ class BluetoothMonitorService : Service() {
         DebugLog.i("Audio focus abandoned")
     }
 
-    private fun isUserPresent(): Boolean {
-        val power = getSystemService(PowerManager::class.java) ?: return true
-        val keyguard = getSystemService(KeyguardManager::class.java)
-        return power.isInteractive && keyguard?.isKeyguardLocked != true
-    }
+    private fun isScreenOn(): Boolean =
+        getSystemService(PowerManager::class.java)?.isInteractive ?: true
 
     private fun persistLastKnownVolume(volume: Int) {        getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE)
             .edit()
